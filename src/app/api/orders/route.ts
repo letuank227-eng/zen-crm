@@ -70,6 +70,14 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   const userId = request.headers.get('x-user-id') || undefined;
   const user = await getCurrentUser(userId);
+
+  if (user.role !== 'ADMIN') {
+    return NextResponse.json(
+      { error: 'Chỉ Giám đốc (Admin) mới có quyền chỉnh sửa đơn hàng' },
+      { status: 403 }
+    );
+  }
+
   const db = await readDb();
   const body = await request.json();
   const { id, status, paidAmount, customerAddress, dueDate, notes, cancelReason, discount, shippingFee } = body;
@@ -87,17 +95,15 @@ export async function PUT(request: NextRequest) {
   if (notes !== undefined) currentOrder.notes = notes;
   if (cancelReason !== undefined) currentOrder.cancelReason = cancelReason;
 
-  // STAFF không được quyền sửa tiền thanh toán và công nợ
-  if (user.role !== 'STAFF') {
-    if (discount !== undefined) {
-      currentOrder.discount = Math.max(0, Number(discount) || 0);
-    }
-    if (shippingFee !== undefined) {
-      currentOrder.shippingFee = Math.max(0, Number(shippingFee) || 0);
-    }
-    if (currentOrder.subtotal !== undefined) {
-      currentOrder.totalAmount = Math.max(0, currentOrder.subtotal + (currentOrder.shippingFee || 0) - (currentOrder.discount || 0));
-    }
+  // Cập nhật chiết khấu & phí ship nếu có
+  if (discount !== undefined) {
+    currentOrder.discount = Math.max(0, Number(discount) || 0);
+  }
+  if (shippingFee !== undefined) {
+    currentOrder.shippingFee = Math.max(0, Number(shippingFee) || 0);
+  }
+  if (currentOrder.subtotal !== undefined) {
+    currentOrder.totalAmount = Math.max(0, currentOrder.subtotal + (currentOrder.shippingFee || 0) - (currentOrder.discount || 0));
   }
 
   // Xử lý 4 trạng thái đơn hàng theo đúng nghiệp vụ:
@@ -108,7 +114,7 @@ export async function PUT(request: NextRequest) {
   if (status) {
     currentOrder.status = status as OrderStatus;
 
-    if (status === 'COMPLETED' && user.role !== 'STAFF') {
+    if (status === 'COMPLETED') {
       // Hoàn thành: Khách đã thanh toán xong hết toàn bộ tiền
       currentOrder.paidAmount = currentOrder.totalAmount;
       currentOrder.remainingDebt = 0;
@@ -137,7 +143,7 @@ export async function PUT(request: NextRequest) {
       if (cancelReason) currentOrder.cancelReason = cancelReason;
       currentOrder.remainingDebt = 0;
     }
-  } else if (paidAmount !== undefined && user.role !== 'STAFF') {
+  } else if (paidAmount !== undefined) {
     const newPaid = Math.min(Number(paidAmount) || 0, currentOrder.totalAmount);
     currentOrder.paidAmount = newPaid;
     currentOrder.remainingDebt = Math.max(0, currentOrder.totalAmount - newPaid);

@@ -25,6 +25,13 @@ export async function POST(request: NextRequest) {
   const userId = request.headers.get('x-user-id') || undefined;
   const user = await getCurrentUser(userId);
 
+  if (user.role !== 'ADMIN') {
+    return NextResponse.json(
+      { error: 'Chỉ Giám đốc (Admin) mới có quyền thêm hoặc chỉnh sửa nhóm danh mục sản phẩm' },
+      { status: 403 }
+    );
+  }
+
   const db = await readDb();
   const body = await request.json();
   const categoryName = body.categoryName || body.name;

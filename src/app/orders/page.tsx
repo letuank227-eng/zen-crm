@@ -36,6 +36,7 @@ import CreateLeadModal from '@/components/leads/CreateLeadModal';
 
 export default function OrdersPage() {
   const { fetchWithAuth, currentUser } = useAuth();
+  const isDirector = currentUser?.role === 'ADMIN';
   const { dateFrom, dateTo } = useDateFilter();
   const [orders, setOrders] = useState<Order[]>([]);
   const [metrics, setMetrics] = useState<any>(null);
@@ -111,6 +112,10 @@ export default function OrdersPage() {
   const handleUpdatePayment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingOrder) return;
+    if (!isDirector) {
+      alert('Chỉ Giám đốc (Admin) mới có quyền chỉnh sửa đơn hàng.');
+      return;
+    }
     setIsUpdating(true);
 
     try {
@@ -641,15 +646,30 @@ export default function OrdersPage() {
                 </div>
               </div>
 
+              {/* Cảnh báo chế độ chỉ xem đối với nhân sự không phải Giám đốc */}
+              {!isDirector && (
+                <div className="p-2.5 bg-slate-100 border border-slate-200 rounded-xl text-slate-700 text-xs flex items-center gap-2">
+                  <Lock className="w-4 h-4 text-slate-500 flex-shrink-0" />
+                  <span>
+                    Chế độ chỉ xem: Chỉ <strong>Giám đốc</strong> mới có quyền chỉnh sửa thông tin, địa chỉ và trạng thái đơn hàng.
+                  </span>
+                </div>
+              )}
+
               {/* Địa chỉ giao hàng */}
               <div>
                 <label className="font-semibold text-slate-700 block mb-1">Địa chỉ giao hàng:</label>
                 <input
                   type="text"
                   value={orderAddress}
+                  disabled={!isDirector}
                   onChange={e => setOrderAddress(e.target.value)}
                   placeholder="Địa chỉ giao hàng..."
-                  className="w-full p-2 bg-white border border-slate-200 rounded-lg outline-none text-xs focus:ring-1 focus:ring-emerald-500"
+                  className={`w-full p-2 border rounded-lg outline-none text-xs ${
+                    isDirector
+                      ? 'bg-white border-slate-200 focus:ring-1 focus:ring-emerald-500 text-slate-900'
+                      : 'bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed'
+                  }`}
                 />
               </div>
 
@@ -658,8 +678,13 @@ export default function OrdersPage() {
                 <label className="font-semibold text-slate-700 block">Trạng thái đơn hàng:</label>
                 <select
                   value={orderStatus === 'DELIVERING' ? 'DELIVERED_UNPAID' : orderStatus}
+                  disabled={!isDirector}
                   onChange={e => setOrderStatus(e.target.value as OrderStatus)}
-                  className="w-full p-2.5 bg-white border border-slate-300 rounded-xl outline-none font-bold text-slate-800 text-xs focus:ring-2 focus:ring-emerald-500 cursor-pointer shadow-2xs"
+                  className={`w-full p-2.5 border rounded-xl outline-none font-bold text-xs shadow-2xs ${
+                    isDirector
+                      ? 'bg-white border-slate-300 text-slate-800 focus:ring-2 focus:ring-emerald-500 cursor-pointer'
+                      : 'bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed'
+                  }`}
                 >
                   <option value="PENDING">1/ Chờ xử lý</option>
                   <option value="DELIVERED_UNPAID">2/ Đã giao hàng thành công (chưa thanh toán)</option>
@@ -676,9 +701,14 @@ export default function OrdersPage() {
                     <textarea
                       rows={2}
                       value={cancelReason}
+                      disabled={!isDirector}
                       onChange={e => setCancelReason(e.target.value)}
                       placeholder="Nhập lý do khách hủy đơn..."
-                      className="w-full p-2 bg-white border border-slate-300 rounded-xl outline-none text-xs text-slate-800 placeholder:text-slate-400 focus:ring-1 focus:ring-rose-500"
+                      className={`w-full p-2 border rounded-xl outline-none text-xs placeholder:text-slate-400 ${
+                        isDirector
+                          ? 'bg-white border-slate-300 text-slate-800 focus:ring-1 focus:ring-rose-500'
+                          : 'bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed'
+                      }`}
                       required
                     />
                   </div>
@@ -694,13 +724,25 @@ export default function OrdersPage() {
                 >
                   Đóng
                 </button>
-                <button
-                  type="submit"
-                  disabled={isUpdating}
-                  className="px-5 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl font-bold shadow-sm transition-colors text-xs"
-                >
-                  {isUpdating ? 'Đang lưu...' : 'Lưu Thay Đổi'}
-                </button>
+                {isDirector ? (
+                  <button
+                    type="submit"
+                    disabled={isUpdating}
+                    className="px-5 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl font-bold shadow-sm transition-colors text-xs cursor-pointer"
+                  >
+                    {isUpdating ? 'Đang lưu...' : 'Lưu Thay Đổi'}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    disabled
+                    className="px-3.5 py-1.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-xl font-medium text-xs cursor-not-allowed flex items-center gap-1.5"
+                    title="Chỉ Giám đốc mới có quyền chỉnh sửa đơn hàng"
+                  >
+                    <Lock className="w-3.5 h-3.5" />
+                    <span>Chỉ Giám đốc được sửa</span>
+                  </button>
+                )}
               </div>
             </form>
           </div>
