@@ -15,7 +15,12 @@ export async function middleware(request: NextRequest) {
   const headers = new Headers(request.headers);
   headers.delete('x-user-id');
 
-  const session = await verifySessionToken(request.cookies.get(SESSION_COOKIE)?.value);
+  const cookieToken = request.cookies.get(SESSION_COOKIE)?.value;
+  const authHeader = request.headers.get('authorization');
+  const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  const rawToken = cookieToken || bearerToken;
+
+  const session = await verifySessionToken(rawToken);
   if (session) {
     headers.set('x-user-id', session.uid);
   } else if (!PUBLIC_API.has(pathname)) {

@@ -55,12 +55,14 @@ export async function POST(request: NextRequest) {
       `Đăng nhập thành công vào hệ thống ZEN CRM (${user.email} - Vai trò: ${user.role})`
     );
 
+    const sessionToken = await createSessionToken(user.id);
     const response = NextResponse.json({
       success: true,
       message: 'Đăng nhập thành công',
       user: toSafeUser(user),
+      token: sessionToken,
     });
-    response.cookies.set(SESSION_COOKIE, await createSessionToken(user.id), sessionCookieOptions);
+    response.cookies.set(SESSION_COOKIE, sessionToken, sessionCookieOptions);
     response.cookies.delete('zen_crm_user_id'); // legacy unsigned cookie
     return response;
   } catch (error: any) {

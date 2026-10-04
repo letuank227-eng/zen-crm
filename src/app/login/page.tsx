@@ -54,8 +54,8 @@ export default function LoginPage() {
     if (result.success) {
       setLoginSuccess('Đăng nhập thành công! Đang chuyển hướng vào hệ thống...');
       setTimeout(() => {
-        router.push('/');
-      }, 400);
+        window.location.href = '/';
+      }, 300);
     } else {
       setLoginError(result.error || 'Đăng nhập không thành công');
     }

@@ -50,7 +50,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchUsersAndSession = useCallback(async () => {
     try {
-      const res = await fetch('/api/auth/current', { cache: 'no-store' });
+      const token = typeof window !== 'undefined' ? localStorage.getItem('zen_crm_token') : null;
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      const res = await fetch('/api/auth/current', {
+        headers,
+        credentials: 'include',
+        cache: 'no-store',
+      });
       if (res.ok) {
         const data = await res.json();
         setUsers(data.users || []);
@@ -74,12 +83,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ identifier, password }),
       });
 
       const data = await res.json();
       if (!res.ok) {
         return { success: false, error: data.error || 'Đăng nhập không thành công' };
+      }
+
+      if (data.token && typeof window !== 'undefined') {
+        localStorage.setItem('zen_crm_token', data.token);
       }
 
       setCurrentUser(data.user);
@@ -98,7 +112,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     try {
-      await fetch('/api/auth/logout', { method: 'POST' });
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('zen_crm_token');
+      }
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
     } catch (err) {
       console.error('Logout error:', err);
     } finally {
@@ -130,10 +147,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await fetchUsersAndSession();
   };
 
-  // The session cookie is sent automatically; on 401 the session expired -> back to login.
+  // The session cookie + bearer token are sent; on 401 the session expired -> back to login.
   const fetchWithAuth = async (url: string, options: RequestInit = {}): Promise<Response> => {
-    const res = await fetch(url, { ...options, credentials: 'same-origin' });
+    const token = typeof window !== 'undefined' ? localStorage.getItem('zen_crm_token') : null;
+    const headers = new Headers(options.headers || {});
+    if (token) {
+      headers.set('Authorization', `Bearer ${token}`);
+    }
+    const res = await fetch(url, { ...options, headers, credentials: 'include' });
     if (res.status === 401 && currentUser) {
+      if (typeof window !== 'undefined') localStorage.removeItem('zen_crm_token');
       setCurrentUser(null);
       router.push('/login');
     }
