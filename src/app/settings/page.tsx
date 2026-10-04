@@ -828,75 +828,78 @@ export default function SettingsPage() {
 
       {/* Modal chỉnh sửa nhóm kinh doanh */}
       {editingTeam && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 border border-slate-200 text-xs animate-in zoom-in-95">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 text-xs animate-in zoom-in-95 my-auto flex flex-col max-h-[92vh] overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 flex-shrink-0 bg-white">
               <span className="font-bold text-sm text-slate-800 flex items-center gap-2">
                 <Edit2 className="w-4 h-4 text-blue-600" />
                 <span>Tùy Chỉnh Nhóm Kinh Doanh</span>
               </span>
               <button
+                type="button"
                 onClick={() => setEditingTeam(null)}
-                className="p-1 rounded text-slate-400 hover:text-slate-600 cursor-pointer"
+                className="p-1 rounded text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleSaveEditTeam} className="space-y-3">
-              <div>
-                <label className="font-semibold text-slate-700 block mb-1">Tên nhóm *:</label>
-                <input
-                  type="text"
-                  required
-                  value={editTeamName}
-                  onChange={e => setEditTeamName(e.target.value)}
-                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
-                />
+            <form onSubmit={handleSaveEditTeam} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+              <div className="p-5 overflow-y-auto space-y-3.5 flex-1">
+                <div>
+                  <label className="font-semibold text-slate-700 block mb-1">Tên nhóm *:</label>
+                  <input
+                    type="text"
+                    required
+                    value={editTeamName}
+                    onChange={e => setEditTeamName(e.target.value)}
+                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-semibold text-slate-700 block mb-1">Quản lý / Trưởng nhóm:</label>
+                  <select
+                    value={editTeamLeaderId}
+                    onChange={e => setEditTeamLeaderId(e.target.value)}
+                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">-- Chưa chỉ định --</option>
+                    {userList.map(u => (
+                      <option key={u.id} value={u.id}>
+                        {u.name} ({u.role} - {u.email})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="font-semibold text-slate-700 block mb-1">
+                    Chỉ tiêu doanh số tháng (VND):
+                  </label>
+                  <input
+                    type="number"
+                    step="10000000"
+                    required
+                    value={editTeamTarget}
+                    onChange={e => setEditTeamTarget(Number(e.target.value))}
+                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none font-bold text-emerald-700 focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
               </div>
 
-              <div>
-                <label className="font-semibold text-slate-700 block mb-1">Quản lý / Trưởng nhóm:</label>
-                <select
-                  value={editTeamLeaderId}
-                  onChange={e => setEditTeamLeaderId(e.target.value)}
-                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">-- Chưa chỉ định --</option>
-                  {userList.map(u => (
-                    <option key={u.id} value={u.id}>
-                      {u.name} ({u.role} - {u.email})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="font-semibold text-slate-700 block mb-1">
-                  Chỉ tiêu doanh số tháng (VND):
-                </label>
-                <input
-                  type="number"
-                  step="10000000"
-                  required
-                  value={editTeamTarget}
-                  onChange={e => setEditTeamTarget(Number(e.target.value))}
-                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none font-bold text-emerald-700 focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+              <div className="flex justify-end gap-2 px-5 py-3.5 bg-slate-50 border-t border-slate-100 flex-shrink-0">
                 <button
                   type="button"
                   onClick={() => setEditingTeam(null)}
-                  className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg font-medium cursor-pointer"
+                  className="px-3.5 py-1.5 bg-white border border-slate-200 text-slate-700 rounded-lg font-medium hover:bg-slate-100 cursor-pointer shadow-2xs"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
                   disabled={isUpdatingTeam}
-                  className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold shadow-sm cursor-pointer"
+                  className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold shadow-sm cursor-pointer disabled:opacity-50"
                 >
                   {isUpdatingTeam ? 'Đang lưu...' : 'Lưu Thay Đổi'}
                 </button>

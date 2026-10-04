@@ -424,110 +424,116 @@ function ActivitiesContent() {
 
       {/* Create Task Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-60 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 border border-slate-200 animate-in zoom-in-95 text-xs">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div className="fixed inset-0 z-60 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 animate-in zoom-in-95 text-xs my-auto flex flex-col max-h-[92vh] overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 flex-shrink-0 bg-white">
               <div className="flex items-center gap-2">
                 <CalendarCheck className="w-4 h-4 text-emerald-600" />
                 <h3 className="font-bold text-sm text-slate-800">Lên Lịch Hẹn / Công Việc Mới</h3>
               </div>
-              <button onClick={() => setShowCreateModal(false)} className="p-1 rounded text-slate-400 hover:text-slate-600">
+              <button
+                type="button"
+                onClick={() => setShowCreateModal(false)}
+                className="p-1 rounded text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
+              >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateTask} className="space-y-3">
-              <div>
-                <label className="font-semibold text-slate-700 mb-1 block">Tiêu đề công việc *:</label>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={e => setTitle(e.target.value)}
-                  placeholder="VD: Gọi điện chốt hợp đồng với anh Nam..."
-                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-emerald-500 font-medium"
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
+            <form onSubmit={handleCreateTask} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+              <div className="p-5 overflow-y-auto space-y-3.5 flex-1">
                 <div>
-                  <label className="font-semibold text-slate-700 mb-1 block">Hình thức:</label>
+                  <label className="font-semibold text-slate-700 mb-1 block">Tiêu đề công việc *:</label>
+                  <input
+                    type="text"
+                    value={title}
+                    onChange={e => setTitle(e.target.value)}
+                    placeholder="VD: Gọi điện chốt hợp đồng với anh Nam..."
+                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-emerald-500 font-medium"
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="font-semibold text-slate-700 mb-1 block">Hình thức:</label>
+                    <select
+                      value={taskType}
+                      onChange={e => setTaskType(e.target.value as any)}
+                      className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none"
+                    >
+                      <option value="CALL">Gọi điện thoại</option>
+                      <option value="MEETING">Gặp trực tiếp</option>
+                      <option value="SEND_QUOTE">Gửi báo giá</option>
+                      <option value="DEMO">Demo giải pháp</option>
+                      <option value="EMAIL">Gửi Email</option>
+                      <option value="OTHER">Khác</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="font-semibold text-slate-700 mb-1 block">Thời gian hẹn *:</label>
+                    <input
+                      type="datetime-local"
+                      value={dueDate}
+                      onChange={e => setDueDate(e.target.value)}
+                      className="w-full p-1.5 bg-slate-50 border border-slate-200 rounded-lg outline-none"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="font-semibold text-slate-700 mb-1 block">Gắn với Khách hàng:</label>
                   <select
-                    value={taskType}
-                    onChange={e => setTaskType(e.target.value as any)}
+                    value={relatedLeadId}
+                    onChange={e => setRelatedLeadId(e.target.value)}
                     className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none"
                   >
-                    <option value="CALL">Gọi điện thoại</option>
-                    <option value="MEETING">Gặp trực tiếp</option>
-                    <option value="SEND_QUOTE">Gửi báo giá</option>
-                    <option value="DEMO">Demo giải pháp</option>
-                    <option value="EMAIL">Gửi Email</option>
-                    <option value="OTHER">Khác</option>
+                    <option value="">-- Không gắn khách hàng --</option>
+                    {leads.map(l => (
+                      <option key={l.id} value={l.id}>{l.fullName} ({l.phone})</option>
+                    ))}
                   </select>
                 </div>
 
                 <div>
-                  <label className="font-semibold text-slate-700 mb-1 block">Thời gian hẹn *:</label>
-                  <input
-                    type="datetime-local"
-                    value={dueDate}
-                    onChange={e => setDueDate(e.target.value)}
-                    className="w-full p-1.5 bg-slate-50 border border-slate-200 rounded-lg outline-none"
-                    required
+                  <label className="font-semibold text-slate-700 mb-1 block">Sale phụ trách:</label>
+                  <select
+                    value={assignedSaleId}
+                    onChange={e => setAssignedSaleId(e.target.value)}
+                    disabled={currentUser?.role === 'SALE' || currentUser?.role === 'STAFF'}
+                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none disabled:opacity-60"
+                  >
+                    {sales.map(s => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="font-semibold text-slate-700 mb-1 block">Ghi chú chi tiết:</label>
+                  <textarea
+                    rows={2}
+                    value={notes}
+                    onChange={e => setNotes(e.target.value)}
+                    placeholder="Ghi chú nội dung cần chuẩn bị trước cuộc hẹn..."
+                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none"
                   />
                 </div>
               </div>
 
-              <div>
-                <label className="font-semibold text-slate-700 mb-1 block">Gắn với Khách hàng:</label>
-                <select
-                  value={relatedLeadId}
-                  onChange={e => setRelatedLeadId(e.target.value)}
-                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none"
-                >
-                  <option value="">-- Không gắn khách hàng --</option>
-                  {leads.map(l => (
-                    <option key={l.id} value={l.id}>{l.fullName} ({l.phone})</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="font-semibold text-slate-700 mb-1 block">Sale phụ trách:</label>
-                <select
-                  value={assignedSaleId}
-                  onChange={e => setAssignedSaleId(e.target.value)}
-                  disabled={currentUser?.role === 'SALE' || currentUser?.role === 'STAFF'}
-                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none disabled:opacity-60"
-                >
-                  {sales.map(s => (
-                    <option key={s.id} value={s.id}>{s.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="font-semibold text-slate-700 mb-1 block">Ghi chú chi tiết:</label>
-                <textarea
-                  rows={2}
-                  value={notes}
-                  onChange={e => setNotes(e.target.value)}
-                  placeholder="Ghi chú nội dung cần chuẩn bị trước cuộc hẹn..."
-                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+              <div className="flex justify-end gap-2 px-5 py-3.5 bg-slate-50 border-t border-slate-100 flex-shrink-0">
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium"
+                  className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-lg font-medium cursor-pointer shadow-2xs"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold shadow-sm"
+                  className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold shadow-sm cursor-pointer"
                 >
                   Lưu lịch hẹn
                 </button>

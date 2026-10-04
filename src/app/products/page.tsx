@@ -396,189 +396,199 @@ export default function ProductsPage() {
 
       {/* MODAL 1: THÊM / SỬA SẢN PHẨM - CHUẨN 4 PHẦN (ẢNH -> TÊN -> GIÁ -> GHI CHÚ) */}
       {showProductModal && (
-        <div className="fixed inset-0 z-[100] bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 border border-slate-200 text-xs animate-in zoom-in-95">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div className="fixed inset-0 z-[100] bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-2.5 sm:p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl sm:rounded-3xl max-w-lg w-full shadow-2xl border border-slate-200 text-xs animate-in zoom-in-95 my-auto flex flex-col max-h-[92vh] sm:max-h-[90vh] overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-3.5 sm:px-6 sm:py-4 border-b border-slate-100 flex-shrink-0 bg-white">
               <div className="flex items-center gap-2">
-                <Package className="w-4 h-4 text-emerald-600" />
+                <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+                  <Package className="w-4 h-4" />
+                </div>
                 <h3 className="font-bold text-sm text-slate-800">
                   {editingProd ? 'Cập Nhật Sản Phẩm' : 'Thêm Mới Sản Phẩm'}
                 </h3>
               </div>
-              <button onClick={() => setShowProductModal(false)} className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100">
+              <button
+                type="button"
+                onClick={() => setShowProductModal(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+              >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            {errorMsg && (
-              <div className="p-2.5 bg-rose-50 border border-rose-200 text-rose-700 rounded-lg flex items-center gap-1.5">
-                <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
-                <span>{errorMsg}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleSaveProduct} className="space-y-3.5">
-              {/* [ 1. ẢNH SẢN PHẨM - UPLOAD TRỰC TIẾP ] */}
-              <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-2.5">
-                <label className="font-bold text-slate-800 text-[11px] uppercase tracking-wider block">
-                  1. Ảnh Sản Phẩm (Tải lên từ máy tính):
-                </label>
-
-                <input
-                  ref={modalFileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleModalFileUpload}
-                  className="hidden"
-                />
-
-                <div className="flex gap-3 items-center">
-                  {/* Image Preview Thumbnail */}
-                  <div
-                    onClick={() => modalFileInputRef.current?.click()}
-                    className="w-24 h-24 rounded-2xl overflow-hidden border-2 border-dashed border-slate-300 bg-white flex flex-col items-center justify-center cursor-pointer hover:border-emerald-500 relative flex-shrink-0 group"
-                  >
-                    {imageUrl ? (
-                      <>
-                        <img
-                          src={imageUrl}
-                          alt="Preview"
-                          className="w-full h-full object-cover"
-                        />
-                        <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[10px] font-bold">
-                          Đổi ảnh
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <Upload className="w-6 h-6 text-slate-400 mb-1" />
-                        <span className="text-[10px] text-slate-500 font-medium">Chọn ảnh</span>
-                      </>
-                    )}
+            <form onSubmit={handleSaveProduct} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+              {/* Scrollable Form Content */}
+              <div className="p-4 sm:p-6 overflow-y-auto space-y-4 flex-1">
+                {errorMsg && (
+                  <div className="p-2.5 bg-rose-50 border border-rose-200 text-rose-700 rounded-lg flex items-center gap-1.5">
+                    <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                    <span>{errorMsg}</span>
                   </div>
+                )}
 
-                  {/* Upload button & URL input */}
-                  <div className="flex-1 space-y-2">
-                    <button
-                      type="button"
+                {/* [ 1. ẢNH SẢN PHẨM - UPLOAD TRỰC TIẾP ] */}
+                <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-2.5">
+                  <label className="font-bold text-slate-800 text-[11px] uppercase tracking-wider block">
+                    1. Ảnh Sản Phẩm (Tải lên từ máy tính):
+                  </label>
+
+                  <input
+                    ref={modalFileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleModalFileUpload}
+                    className="hidden"
+                  />
+
+                  <div className="flex flex-col sm:flex-row gap-3 items-center sm:items-start">
+                    {/* Image Preview Thumbnail */}
+                    <div
                       onClick={() => modalFileInputRef.current?.click()}
-                      className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold flex items-center gap-1.5 shadow-xs"
+                      className="w-24 h-24 rounded-2xl overflow-hidden border-2 border-dashed border-slate-300 bg-white flex flex-col items-center justify-center cursor-pointer hover:border-emerald-500 relative flex-shrink-0 group shadow-2xs"
                     >
-                      <Upload className="w-3.5 h-3.5" />
-                      <span>Chọn file ảnh từ thiết bị</span>
-                    </button>
-                    <input
-                      type="text"
-                      value={imageUrl.startsWith('data:') ? 'Ảnh đã tải từ máy tính' : imageUrl}
-                      onChange={e => {
-                        if (!e.target.value.startsWith('Ảnh đã')) {
-                          setImageUrl(e.target.value);
-                        }
-                      }}
-                      placeholder="Hoặc dán đường dẫn ảnh (URL)..."
-                      className="w-full p-2 bg-white border border-slate-200 rounded-xl outline-none text-[11px]"
-                    />
+                      {imageUrl ? (
+                        <>
+                          <img
+                            src={imageUrl}
+                            alt="Preview"
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[10px] font-bold">
+                            Đổi ảnh
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-6 h-6 text-slate-400 mb-1" />
+                          <span className="text-[10px] text-slate-500 font-medium">Chọn ảnh</span>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Upload button & URL input */}
+                    <div className="flex-1 w-full space-y-2 min-w-0">
+                      <button
+                        type="button"
+                        onClick={() => modalFileInputRef.current?.click()}
+                        className="w-full sm:w-auto px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold flex items-center justify-center gap-1.5 shadow-xs cursor-pointer transition-colors"
+                      >
+                        <Upload className="w-3.5 h-3.5" />
+                        <span>Chọn file ảnh từ thiết bị</span>
+                      </button>
+                      <input
+                        type="text"
+                        value={imageUrl.startsWith('data:') ? 'Ảnh đã tải từ máy tính' : imageUrl}
+                        onChange={e => {
+                          if (!e.target.value.startsWith('Ảnh đã')) {
+                            setImageUrl(e.target.value);
+                          }
+                        }}
+                        placeholder="Hoặc dán đường dẫn ảnh (URL)..."
+                        className="w-full p-2 bg-white border border-slate-200 rounded-xl outline-none text-[11px] focus:ring-1 focus:ring-emerald-500"
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* [ 2. TÊN SẢN PHẨM ] */}
-              <div>
-                <label className="font-bold text-slate-800 text-[11px] uppercase tracking-wider block mb-1">
-                  2. Tên Sản Phẩm *:
-                </label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={e => setName(e.target.value)}
-                  placeholder="VD: Ráy Nana Petite (Anubias nana 'Petite')..."
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none font-semibold text-slate-900 text-xs focus:ring-1 focus:ring-emerald-500"
-                  required
-                />
-              </div>
+                {/* [ 2. TÊN SẢN PHẨM ] */}
+                <div>
+                  <label className="font-bold text-slate-800 text-[11px] uppercase tracking-wider block mb-1">
+                    2. Tên Sản Phẩm *:
+                  </label>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    placeholder="VD: Ráy Nana Petite (Anubias nana 'Petite')..."
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none font-semibold text-slate-900 text-xs focus:ring-1 focus:ring-emerald-500"
+                    required
+                  />
+                </div>
 
-              {/* [ 3. GIÁ BÁN & CHÍNH SÁCH HOA HỒNG SALE ] */}
-              <div className="p-3.5 bg-emerald-50/60 rounded-2xl border border-emerald-200 space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {/* Giá bán */}
-                  <div>
-                    <label className="font-bold text-emerald-900 text-[11px] uppercase tracking-wider block mb-1">
-                      3. Giá Bán (VND) *:
-                    </label>
-                    <input
-                      type="number"
-                      step="1000"
-                      value={price}
-                      onChange={e => {
-                        const newP = Number(e.target.value);
-                        setPrice(newP);
-                        setCommissionAmount(Math.round((newP * commissionRate) / 100));
-                      }}
-                      placeholder="Nhập giá bán..."
-                      className="w-full p-2.5 bg-white border border-emerald-300 rounded-xl font-black text-emerald-700 text-sm outline-none focus:ring-2 focus:ring-emerald-500"
-                      required
-                    />
-                  </div>
-
-                  {/* % Hoa hồng Sale */}
-                  <div>
-                    <label className="font-bold text-emerald-900 text-[11px] uppercase tracking-wider block mb-1">
-                      Hoa Hồng Sale (%):
-                    </label>
-                    <div className="relative">
+                {/* [ 3. GIÁ BÁN & CHÍNH SÁCH HOA HỒNG SALE ] */}
+                <div className="p-3.5 bg-emerald-50/60 rounded-2xl border border-emerald-200 space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* Giá bán */}
+                    <div>
+                      <label className="font-bold text-emerald-900 text-[11px] uppercase tracking-wider block mb-1">
+                        3. Giá Bán (VND) *:
+                      </label>
                       <input
                         type="number"
-                        step="0.5"
-                        min="0"
-                        max="100"
-                        value={commissionRate}
+                        step="1000"
+                        value={price}
                         onChange={e => {
-                          const newRate = Number(e.target.value);
-                          setCommissionRate(newRate);
-                          setCommissionAmount(Math.round((price * newRate) / 100));
+                          const newP = Number(e.target.value);
+                          setPrice(newP);
+                          setCommissionAmount(Math.round((newP * commissionRate) / 100));
                         }}
-                        placeholder="VD: 10"
-                        className="w-full p-2.5 pr-8 bg-white border border-emerald-300 rounded-xl font-bold text-emerald-800 text-sm outline-none focus:ring-2 focus:ring-emerald-500"
+                        placeholder="Nhập giá bán..."
+                        className="w-full p-2.5 bg-white border border-emerald-300 rounded-xl font-black text-emerald-700 text-sm outline-none focus:ring-2 focus:ring-emerald-500"
+                        required
                       />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-emerald-600 text-xs">
-                        %
+                    </div>
+
+                    {/* % Hoa hồng Sale */}
+                    <div>
+                      <label className="font-bold text-emerald-900 text-[11px] uppercase tracking-wider block mb-1">
+                        Hoa Hồng Sale (%):
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          step="0.5"
+                          min="0"
+                          max="100"
+                          value={commissionRate}
+                          onChange={e => {
+                            const newRate = Number(e.target.value);
+                            setCommissionRate(newRate);
+                            setCommissionAmount(Math.round((price * newRate) / 100));
+                          }}
+                          placeholder="VD: 10"
+                          className="w-full p-2.5 pr-8 bg-white border border-emerald-300 rounded-xl font-bold text-emerald-800 text-sm outline-none focus:ring-2 focus:ring-emerald-500"
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-emerald-600 text-xs">
+                          %
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Kết quả tính toán Sale thực nhận */}
+                  <div className="p-2.5 bg-white rounded-xl border border-emerald-200/90 flex items-center justify-between text-xs shadow-2xs">
+                    <span className="text-slate-600 font-semibold flex items-center gap-1.5">
+                      <span className="text-sm">💰</span>
+                      <span>Sale thực nhận về:</span>
+                    </span>
+                    <div className="text-right">
+                      <span className="font-black text-emerald-700 text-base font-futura">
+                        {formatCurrency(commissionAmount)}
+                      </span>
+                      <span className="text-[11px] text-slate-500 font-medium ml-1.5">
+                        ({commissionRate}% của giá gốc)
                       </span>
                     </div>
                   </div>
                 </div>
 
-                {/* Kết quả tính toán Sale thực nhận */}
-                <div className="p-2.5 bg-white rounded-xl border border-emerald-200/90 flex items-center justify-between text-xs shadow-2xs">
-                  <span className="text-slate-600 font-semibold flex items-center gap-1.5">
-                    <span className="text-sm">💰</span>
-                    <span>Sale thực nhận về:</span>
-                  </span>
-                  <div className="text-right">
-                    <span className="font-black text-emerald-700 text-base font-futura">
-                      {formatCurrency(commissionAmount)}
-                    </span>
-                    <span className="text-[11px] text-slate-500 font-medium ml-1.5">
-                      ({commissionRate}% của giá gốc)
-                    </span>
-                  </div>
+                {/* [ 4. NỘI DUNG GHI CHÚ ] */}
+                <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+                  <label className="font-bold text-slate-800 text-[11px] uppercase tracking-wider block">
+                    4. Nội Dung Ghi Chú:
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={notes}
+                    onChange={e => setNotes(e.target.value)}
+                    placeholder="Ghi chú về ánh sáng, CO2, vị trí trồng lũa/đá, bảo hành khi ship xa..."
+                    className="w-full p-2.5 bg-white border border-slate-200 rounded-xl outline-none text-xs leading-relaxed focus:ring-1 focus:ring-emerald-500"
+                  />
                 </div>
               </div>
 
-              {/* [ 4. NỘI DUNG GHI CHÚ ] */}
-              <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
-                <label className="font-bold text-slate-800 text-[11px] uppercase tracking-wider block">
-                  4. Nội Dung Ghi Chú:
-                </label>
-                <textarea
-                  rows={3}
-                  value={notes}
-                  onChange={e => setNotes(e.target.value)}
-                  placeholder="Ghi chú về ánh sáng, CO2, vị trí trồng lũa/đá, bảo hành khi ship xa..."
-                  className="w-full p-2.5 bg-white border border-slate-200 rounded-xl outline-none text-xs leading-relaxed focus:ring-1 focus:ring-emerald-500"
-                />
-              </div>
-
-              <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+              {/* Action Buttons (Sticky/Always Visible at Bottom) */}
+              <div className="flex items-center justify-between px-5 py-3.5 sm:px-6 sm:py-4 bg-slate-50 border-t border-slate-100 flex-shrink-0 gap-2">
                 {editingProd && isDirector ? (
                   <button
                     type="button"
@@ -602,7 +612,7 @@ export default function ProductsPage() {
                   <button
                     type="button"
                     onClick={() => setShowProductModal(false)}
-                    className="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl font-medium hover:bg-slate-200 transition-colors text-xs cursor-pointer"
+                    className="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl font-medium hover:bg-slate-100 transition-colors text-xs cursor-pointer shadow-2xs"
                   >
                     Hủy
                   </button>

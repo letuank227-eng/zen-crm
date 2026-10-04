@@ -1007,55 +1007,61 @@ export default function LeadDetailModal({
 
         {/* Quick Log Interaction Modal */}
         {showLogModal && (
-          <div className="fixed inset-0 z-60 bg-slate-900/50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 border border-slate-200 animate-in zoom-in-95">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+          <div className="fixed inset-0 z-60 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+            <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 animate-in zoom-in-95 my-auto flex flex-col max-h-[92vh] overflow-hidden">
+              <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 flex-shrink-0 bg-white">
                 <span className="font-bold text-sm text-slate-800 flex items-center gap-1.5">
                   <PhoneCall className="w-4 h-4 text-blue-600" />
-                  Ghi Nhật Ký Tương Tác
+                  <span>Ghi Nhật Ký Tương Tác</span>
                 </span>
-                <button onClick={() => setShowLogModal(false)} className="text-slate-400 hover:text-slate-600">
+                <button
+                  type="button"
+                  onClick={() => setShowLogModal(false)}
+                  className="p-1 rounded text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
+                >
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
-              <form onSubmit={handleLogInteraction} className="space-y-3 text-xs">
-                <div>
-                  <label className="text-slate-600 font-semibold mb-1 block">Hình thức liên hệ:</label>
-                  <select
-                    value={interactionChannel}
-                    onChange={e => setInteractionChannel(e.target.value as any)}
-                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-emerald-500"
-                  >
-                    <option value="PHONE">Cuộc gọi điện thoại</option>
-                    <option value="ZALO">Chat Zalo / Tin nhắn</option>
-                    <option value="MEETING">Gặp trực tiếp / Đi thị trường</option>
-                  </select>
+              <form onSubmit={handleLogInteraction} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+                <div className="p-5 overflow-y-auto space-y-3.5 text-xs flex-1">
+                  <div>
+                    <label className="text-slate-600 font-semibold mb-1 block">Hình thức liên hệ:</label>
+                    <select
+                      value={interactionChannel}
+                      onChange={e => setInteractionChannel(e.target.value as any)}
+                      className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-emerald-500"
+                    >
+                      <option value="PHONE">Cuộc gọi điện thoại</option>
+                      <option value="ZALO">Chat Zalo / Tin nhắn</option>
+                      <option value="MEETING">Gặp trực tiếp / Đi thị trường</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-slate-600 font-semibold mb-1 block">Nội dung tóm tắt cuộc trao đổi:</label>
+                    <textarea
+                      rows={4}
+                      value={interactionSummary}
+                      onChange={e => setInteractionSummary(e.target.value)}
+                      placeholder="VD: Đã gọi lúc 10h, khách đang họp, hẹn gọi lại sau 15h chiều..."
+                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-emerald-500"
+                      required
+                    />
+                  </div>
                 </div>
 
-                <div>
-                  <label className="text-slate-600 font-semibold mb-1 block">Nội dung tóm tắt cuộc trao đổi:</label>
-                  <textarea
-                    rows={4}
-                    value={interactionSummary}
-                    onChange={e => setInteractionSummary(e.target.value)}
-                    placeholder="VD: Đã gọi lúc 10h, khách đang họp, hẹn gọi lại sau 15h chiều..."
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-emerald-500"
-                    required
-                  />
-                </div>
-
-                <div className="flex justify-end gap-2 pt-2">
+                <div className="flex justify-end gap-2 px-5 py-3.5 bg-slate-50 border-t border-slate-100 flex-shrink-0">
                   <button
                     type="button"
                     onClick={() => setShowLogModal(false)}
-                    className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium"
+                    className="px-3.5 py-1.5 bg-white border border-slate-200 text-slate-700 rounded-lg font-medium hover:bg-slate-100 cursor-pointer shadow-2xs"
                   >
                     Hủy
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold shadow-sm"
+                    className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold shadow-sm cursor-pointer"
                   >
                     Lưu tương tác
                   </button>
