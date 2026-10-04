@@ -350,5 +350,6 @@ export function getInitialSeedData(): CrmDatabase {
         allowedRoles: ["ADMIN", "LEADER", "SALE"],
       },
     ],
+    pushSubscriptions: [],
   };
 }

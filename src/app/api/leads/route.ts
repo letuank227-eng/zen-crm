@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { readDb, writeDb, getCurrentUser, filterLeadsByRole, logAuditEvent, getNextRoundRobinSale } from '@/lib/db';
 import { generateId, canViewCustomerPhone, canViewCustomerPersonalInfo, maskPhoneNumber } from '@/lib/utils';
 import { Lead, Order, OrderItem, OrderStatus, Deal } from '@/types/crm';
+import { notifyNewOrder, notifyNewLead } from '@/lib/push';
 
 export async function GET(request: NextRequest) {
   const userId = request.headers.get('x-user-id') || undefined;
@@ -329,6 +330,17 @@ export async function POST(request: NextRequest) {
   }
 
   await writeDb(db);
+
+  // Tự động gửi thông báo đẩy (Web Push) tới Admin và Leader của nhóm
+  try {
+    if (newOrder.totalAmount > 0) {
+      await notifyNewOrder({ order: newOrder, creatorUser: user });
+    } else {
+      await notifyNewLead({ lead: newLead, creatorUser: user });
+    }
+  } catch (pushErr) {
+    console.error('Lỗi gửi push notification khi tạo đơn / lead mới:', pushErr);
+  }
 
   await logAuditEvent(
     user.id,

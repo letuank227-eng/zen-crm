@@ -243,15 +243,28 @@ export interface Order {
 
 export interface UserNotification {
   id: string;
-  userId: string; // ID người nhận thông báo (Sale phụ trách)
+  userId: string; // ID người nhận thông báo
   title: string;
   message: string;
-  type: 'ORDER_STATUS' | 'LEAD_ASSIGNED' | 'SYSTEM';
+  type: 'ORDER_STATUS' | 'LEAD_ASSIGNED' | 'SYSTEM' | 'ORDER_CREATED' | 'LEAD_CREATED';
   orderId?: string;
   orderCode?: string;
   leadId?: string;
   isRead: boolean;
   createdAt: string;
+}
+
+export interface PushSubscriptionItem {
+  id: string;
+  userId: string;
+  endpoint: string;
+  keys: {
+    p256dh: string;
+    auth: string;
+  };
+  userAgent?: string;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 export interface DocumentItem {
@@ -294,4 +307,5 @@ export interface CrmDatabase {
   documents: DocumentItem[];
   salesScripts: SalesScript[];
   notifications?: UserNotification[];
+  pushSubscriptions?: PushSubscriptionItem[];
 }

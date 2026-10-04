@@ -34,6 +34,7 @@ import {
 } from 'lucide-react';
 import { User, Team, Role } from '@/types/crm';
 import { generateRandomPassword, copyToClipboard, formatCurrency } from '@/lib/utils';
+import PushNotificationManager from '@/components/common/PushNotificationManager';
 
 export default function SettingsPage() {
   const { fetchWithAuth, currentUser, refreshSession } = useAuth();
@@ -573,6 +574,9 @@ export default function SettingsPage() {
           <span>{notification}</span>
         </div>
       )}
+
+      {/* Cấu hình nhận thông báo đẩy trên điện thoại (Admin & Leader) */}
+      <PushNotificationManager />
 
       {/* ================= THÔNG BÁO TÀI KHOẢN VỪA TẠO (KÈM NÚT COPY GỬI NHÂN VIÊN) ================= */}
       {lastCreatedUser && (

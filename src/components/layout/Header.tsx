@@ -31,6 +31,7 @@ import { Task, UserNotification } from '@/types/crm';
 import { formatCurrency, formatDateTime } from '@/lib/utils';
 import DatePeriodFilter from '@/components/common/DatePeriodFilter';
 import InstallPwaModal from '@/components/common/InstallPwaModal';
+import PushNotificationManager from '@/components/common/PushNotificationManager';
 import { usePwa } from '@/context/PwaInstallContext';
 
 export default function Header() {
@@ -377,6 +378,11 @@ export default function Header() {
                     )}
                   </div>
               )}
+
+              {/* CẤU HÌNH THÔNG BÁO ĐẨY VỀ ĐIỆN THOẠI (WEB PUSH) */}
+              <div className="pt-2 mt-2.5 border-t border-slate-100">
+                <PushNotificationManager compact />
+              </div>
             </div>
           )}
         </div>

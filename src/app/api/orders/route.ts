@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { readDb, writeDb, getCurrentUser, filterOrdersByRole, logAuditEvent } from '@/lib/db';
 import { canViewCustomerPhone, maskPhoneNumber, generateId } from '@/lib/utils';
-import { OrderStatus, UserNotification } from '@/types/crm';
+import { OrderStatus, UserNotification, Order, OrderItem } from '@/types/crm';
+import { notifyNewOrder } from '@/lib/push';
 
 export async function GET(request: NextRequest) {
   const userId = request.headers.get('x-user-id') || undefined;
@@ -234,3 +235,100 @@ export async function PUT(request: NextRequest) {
 
   return NextResponse.json({ order: currentOrder });
 }
+
+export async function POST(request: NextRequest) {
+  const userId = request.headers.get('x-user-id') || undefined;
+  const user = await getCurrentUser(userId);
+  const db = await readDb();
+  const body = await request.json();
+
+  const {
+    leadId,
+    customerName,
+    customerPhone,
+    customerAddress,
+    company,
+    items,
+    subtotal = 0,
+    discount = 0,
+    shippingFee = 0,
+    deposit = 0,
+    paidAmount = 0,
+    dueDate,
+    notes,
+    leadSource,
+    consultingStatus,
+    assignedSaleId,
+    assignedSaleName,
+  } = body;
+
+  const finalSaleId = assignedSaleId || user.id;
+  const finalSaleName = assignedSaleName || user.name;
+
+  const orderItems: OrderItem[] = Array.isArray(items) && items.length > 0 ? items : [];
+  const calculatedSubtotal = subtotal || orderItems.reduce((acc, it) => acc + (it.total || it.unitPrice * it.quantity), 0);
+  const numDiscount = Math.max(0, Number(discount) || 0);
+  const numShipping = Math.max(0, Number(shippingFee) || 0);
+  const numPaid = Math.max(0, Number(paidAmount || deposit) || 0);
+
+  const totalAmount = Math.max(0, calculatedSubtotal + numShipping - numDiscount);
+  const actualPaid = Math.min(numPaid, totalAmount);
+  const remainingDebt = Math.max(0, totalAmount - actualPaid);
+
+  const now = new Date().toISOString();
+  const orderId = generateId('ord');
+  const orderCode = `ORD-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+  let orderStatus: OrderStatus = 'PENDING';
+  if (totalAmount > 0 && remainingDebt === 0) {
+    orderStatus = 'COMPLETED';
+  }
+
+  const newOrder: Order = {
+    id: orderId,
+    code: orderCode,
+    leadId: leadId || generateId('lead'),
+    customerName: customerName || 'Khách hàng',
+    customerPhone: customerPhone || '',
+    customerAddress: customerAddress || '',
+    company: company || '',
+    items: orderItems,
+    subtotal: calculatedSubtotal,
+    discount: numDiscount,
+    shippingFee: numShipping,
+    deposit: actualPaid,
+    totalAmount,
+    paidAmount: actualPaid,
+    remainingDebt,
+    status: orderStatus,
+    leadSource: leadSource || 'Website / Tự đến',
+    consultingStatus: consultingStatus || 'NEW',
+    notes: notes || '',
+    assignedSaleId: finalSaleId,
+    assignedSaleName: finalSaleName,
+    createdAt: now,
+    dueDate: dueDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+  };
+
+  db.orders.unshift(newOrder);
+  await writeDb(db);
+
+  // Tự động gửi thông báo đẩy (Web Push) tới Admin và Leader của nhóm
+  try {
+    await notifyNewOrder({ order: newOrder, creatorUser: user });
+  } catch (pushErr) {
+    console.error('Lỗi gửi push notification khi tạo đơn hàng mới:', pushErr);
+  }
+
+  await logAuditEvent(
+    user.id,
+    user.name,
+    'CREATE',
+    'ORDER',
+    newOrder.id,
+    `Tạo đơn hàng ${newOrder.code} cho khách "${newOrder.customerName}" (Tổng: ${new Intl.NumberFormat('vi-VN').format(totalAmount)} ₫, Đã thu: ${new Intl.NumberFormat('vi-VN').format(actualPaid)} ₫, Còn nợ: ${new Intl.NumberFormat('vi-VN').format(remainingDebt)} ₫)`
+  );
+
+  return NextResponse.json({ order: newOrder }, { status: 201 });
+}
+

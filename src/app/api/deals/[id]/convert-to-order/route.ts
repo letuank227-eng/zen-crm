@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { readDb, writeDb, getCurrentUser, logAuditEvent } from '@/lib/db';
 import { generateId } from '@/lib/utils';
 import { Order, OrderItem } from '@/types/crm';
+import { notifyNewOrder } from '@/lib/push';
 
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   const userId = request.headers.get('x-user-id') || undefined;
@@ -68,6 +69,13 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
   }
 
   await writeDb(db);
+
+  // Tự động gửi thông báo đẩy (Web Push) tới Admin và Leader của nhóm
+  try {
+    await notifyNewOrder({ order: newOrder, creatorUser: user });
+  } catch (pushErr) {
+    console.error('Lỗi gửi push notification khi chuyển đổi deal thành đơn hàng:', pushErr);
+  }
 
   await logAuditEvent(
     user.id,
