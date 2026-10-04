@@ -5,8 +5,8 @@ import { Deal } from '@/types/crm';
 
 export async function GET(request: NextRequest) {
   const userId = request.headers.get('x-user-id') || undefined;
-  const user = getCurrentUser(userId);
-  const db = readDb();
+  const user = await getCurrentUser(userId);
+  const db = await readDb();
 
   let deals = filterDealsByRole(db.deals, user, db);
 
@@ -73,8 +73,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const userId = request.headers.get('x-user-id') || undefined;
-  const user = getCurrentUser(userId);
-  const db = readDb();
+  const user = await getCurrentUser(userId);
+  const db = await readDb();
   const body = await request.json();
 
   const {
@@ -141,9 +141,9 @@ export async function POST(request: NextRequest) {
   };
 
   db.deals.unshift(newDeal);
-  writeDb(db);
+  await writeDb(db);
 
-  logAuditEvent(
+  await logAuditEvent(
     user.id,
     user.name,
     'CREATE',

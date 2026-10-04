@@ -5,8 +5,8 @@ import { Order, OrderItem } from '@/types/crm';
 
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   const userId = request.headers.get('x-user-id') || undefined;
-  const user = getCurrentUser(userId);
-  const db = readDb();
+  const user = await getCurrentUser(userId);
+  const db = await readDb();
 
   const deal = db.deals.find(d => d.id === params.id);
   if (!deal) {
@@ -67,9 +67,9 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     lead.updatedAt = new Date().toISOString();
   }
 
-  writeDb(db);
+  await writeDb(db);
 
-  logAuditEvent(
+  await logAuditEvent(
     user.id,
     user.name,
     'CREATE',

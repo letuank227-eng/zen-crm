@@ -5,8 +5,8 @@ import { Task, TaskType, TaskStatus } from '@/types/crm';
 
 export async function GET(request: NextRequest) {
   const userId = request.headers.get('x-user-id') || undefined;
-  const user = getCurrentUser(userId);
-  const db = readDb();
+  const user = await getCurrentUser(userId);
+  const db = await readDb();
 
   // Auto update overdue tasks
   const nowTime = Date.now();
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
       modified = true;
     }
   });
-  if (modified) writeDb(db);
+  if (modified) await writeDb(db);
 
   let tasks = filterTasksByRole(db.tasks, user, db);
 
@@ -71,8 +71,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const userId = request.headers.get('x-user-id') || undefined;
-  const user = getCurrentUser(userId);
-  const db = readDb();
+  const user = await getCurrentUser(userId);
+  const db = await readDb();
   const body = await request.json();
 
   const {
@@ -128,9 +128,9 @@ export async function POST(request: NextRequest) {
   };
 
   db.tasks.unshift(newTask);
-  writeDb(db);
+  await writeDb(db);
 
-  logAuditEvent(
+  await logAuditEvent(
     user.id,
     user.name,
     'CREATE',
@@ -144,8 +144,8 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   const userId = request.headers.get('x-user-id') || undefined;
-  const user = getCurrentUser(userId);
-  const db = readDb();
+  const user = await getCurrentUser(userId);
+  const db = await readDb();
   const body = await request.json();
   const { id, status, notes, dueDate } = body;
 
@@ -159,9 +159,9 @@ export async function PUT(request: NextRequest) {
   if (notes !== undefined) currentTask.notes = notes;
   if (dueDate) currentTask.dueDate = dueDate;
 
-  writeDb(db);
+  await writeDb(db);
 
-  logAuditEvent(
+  await logAuditEvent(
     user.id,
     user.name,
     'UPDATE',
@@ -176,7 +176,7 @@ export async function PUT(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const id = searchParams.get('id');
-  const db = readDb();
+  const db = await readDb();
 
   const tIndex = db.tasks.findIndex(t => t.id === id);
   if (tIndex === -1) {
@@ -185,7 +185,7 @@ export async function DELETE(request: NextRequest) {
 
   const task = db.tasks[tIndex];
   db.tasks.splice(tIndex, 1);
-  writeDb(db);
+  await writeDb(db);
 
   return NextResponse.json({ success: true });
 }

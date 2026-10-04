@@ -1,53 +1,42 @@
-import fs from 'fs';
-import path from 'path';
 import { CrmDatabase, User, Lead, Deal, Task, Note, AuditLog, Product, Order, Role } from '@/types/crm';
-import { getInitialSeedData } from './seed';
 import { generateId } from './utils';
+import { loadDb, saveDb, DbConflictError } from './storage';
 
-const DATA_DIR = path.join(process.cwd(), 'data');
-const DB_FILE = path.join(DATA_DIR, 'zen_crm_db.json');
+export { DbConflictError };
 
-function ensureDbFile(): void {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-  }
-  if (!fs.existsSync(DB_FILE)) {
-    const seed = getInitialSeedData();
-    fs.writeFileSync(DB_FILE, JSON.stringify(seed, null, 2), 'utf-8');
+export async function readDb(): Promise<CrmDatabase> {
+  return loadDb();
+}
+
+export async function writeDb(data: CrmDatabase): Promise<void> {
+  return saveDb(data);
+}
+
+export class AuthError extends Error {
+  constructor(message = 'Chưa đăng nhập hoặc tài khoản không hợp lệ') {
+    super(message);
+    this.name = 'AuthError';
   }
 }
 
-export function readDb(): CrmDatabase {
-  ensureDbFile();
-  try {
-    const content = fs.readFileSync(DB_FILE, 'utf-8');
-    return JSON.parse(content);
-  } catch (err) {
-    console.error('Error reading CRM DB, re-seeding:', err);
-    const seed = getInitialSeedData();
-    writeDb(seed);
-    return seed;
-  }
+/**
+ * Resolves the authenticated user. `userId` comes from the `x-user-id` header,
+ * which middleware sets from the verified session cookie (client values are stripped).
+ */
+export async function getCurrentUser(userId?: string): Promise<User> {
+  if (!userId) throw new AuthError();
+  const db = await readDb();
+  const user = db.users.find(u => u.id === userId);
+  if (!user) throw new AuthError();
+  if (user.isLocked) throw new AuthError('Tài khoản đã bị khóa');
+  return user;
 }
 
-export function writeDb(data: CrmDatabase): void {
-  ensureDbFile();
-  const tempFile = `${DB_FILE}.tmp_${Date.now()}`;
-  fs.writeFileSync(tempFile, JSON.stringify(data, null, 2), 'utf-8');
-  fs.renameSync(tempFile, DB_FILE);
-}
-
-// User & Role Resolution Helper
-export function getCurrentUser(userIdOrRole?: string): User {
-  const db = readDb();
-  if (!userIdOrRole) {
-    return db.users.find(u => u.role === 'ADMIN') || db.users[0];
-  }
-  const userById = db.users.find(u => u.id === userIdOrRole);
-  if (userById) return userById;
-  const userByRole = db.users.find(u => u.role === userIdOrRole.toUpperCase());
-  if (userByRole) return userByRole;
-  return db.users[0];
+/** Strips secrets before sending a user object to the client. */
+export function toSafeUser<T extends { password?: string }>(user: T): Omit<T, 'password'> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { password, ...rest } = user;
+  return rest;
 }
 
 // RBAC Filter Helpers
@@ -137,7 +126,7 @@ export function filterTasksByRole(tasks: Task[], user: User, db: CrmDatabase): T
 }
 
 // Audit Log Helper
-export function logAuditEvent(
+export async function logAuditEvent(
   userId: string,
   userName: string,
   action: AuditLog['action'],
@@ -145,8 +134,7 @@ export function logAuditEvent(
   entityId: string,
   details: string,
   options?: { previousValue?: string; newValue?: string; reason?: string }
-): void {
-  const db = readDb();
+): Promise<void> {
   const log: AuditLog = {
     id: generateId('aud'),
     userId,
@@ -160,8 +148,17 @@ export function logAuditEvent(
     reason: options?.reason,
     createdAt: new Date().toISOString(),
   };
-  db.auditLogs.unshift(log);
-  writeDb(db);
+  // Audit log is append-only, so on a concurrent-write conflict just reload and retry.
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const db = await readDb();
+    db.auditLogs.unshift(log);
+    try {
+      await writeDb(db);
+      return;
+    } catch (err) {
+      if (!(err instanceof DbConflictError) || attempt === 4) throw err;
+    }
+  }
 }
 
 // Round-Robin Assignment Logic

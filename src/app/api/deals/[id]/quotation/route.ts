@@ -5,8 +5,8 @@ import { Quotation } from '@/types/crm';
 
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   const userId = request.headers.get('x-user-id') || undefined;
-  const user = getCurrentUser(userId);
-  const db = readDb();
+  const user = await getCurrentUser(userId);
+  const db = await readDb();
 
   const dealIndex = db.deals.findIndex(d => d.id === params.id);
   if (dealIndex === -1) {
@@ -39,9 +39,9 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
   db.deals[dealIndex].products = items;
   db.deals[dealIndex].updatedAt = new Date().toISOString();
 
-  writeDb(db);
+  await writeDb(db);
 
-  logAuditEvent(
+  await logAuditEvent(
     user.id,
     user.name,
     'UPDATE',

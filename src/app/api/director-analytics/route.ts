@@ -4,7 +4,7 @@ import { parseDateBoundary } from '@/lib/utils';
 
 export async function GET(request: NextRequest) {
   const userId = request.headers.get('x-user-id') || undefined;
-  const user = getCurrentUser(userId);
+  const user = await getCurrentUser(userId);
 
   if (!user) {
     return NextResponse.json(
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const db = readDb();
+  const db = await readDb();
 
   const searchParams = request.nextUrl.searchParams;
   const period = (searchParams.get('period') || 'MONTH').toUpperCase();

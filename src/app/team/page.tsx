@@ -50,7 +50,7 @@ export default function TeamPage() {
   const [newUserName, setNewUserName] = useState('');
   const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserPhone, setNewUserPhone] = useState('');
-  const [newUserPassword, setNewUserPassword] = useState('zengarden');
+  const [newUserPassword, setNewUserPassword] = useState(() => generateRandomPassword(10));
   const [newUserRole, setNewUserRole] = useState<'SALE' | 'LEADER' | 'ADMIN' | 'STAFF'>('SALE');
   const [newUserTeamId, setNewUserTeamId] = useState('');
   const [newUserTarget, setNewUserTarget] = useState(150000000);
@@ -163,7 +163,7 @@ export default function TeamPage() {
           role: newUserRole,
           teamId: newUserTeamId || undefined,
           targetRevenue: newUserTarget,
-          password: newUserPassword.trim() || '123456',
+          password: newUserPassword.trim() || undefined,
         }),
       });
 
@@ -171,8 +171,11 @@ export default function TeamPage() {
         setShowAddUserModal(false);
         setNewUserName('');
         setNewUserEmail('');
-        setNewUserPassword('123456');
+        setNewUserPassword(generateRandomPassword(10));
         fetchUsers();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || 'Tạo nhân viên thất bại');
       }
     } catch (err) {
       console.error('Failed to create user:', err);
@@ -399,12 +402,6 @@ export default function TeamPage() {
                   <td className="py-3 px-4 whitespace-nowrap">
                     <div className="font-bold text-slate-800">{u.name}</div>
                     <div className="text-[11px] text-slate-400">{u.email}</div>
-                    {currentUser?.role === 'ADMIN' && (
-                      <div className="mt-1 inline-flex items-center gap-1 text-[10px] text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 whitespace-nowrap">
-                        <KeyRound className="w-2.5 h-2.5 text-amber-500 flex-shrink-0" />
-                        <span>MK cấp: <strong className="font-mono text-emerald-700">{u.password || 'zengarden'}</strong></span>
-                      </div>
-                    )}
                   </td>
 
                   <td className="py-3 px-4 whitespace-nowrap">
@@ -556,7 +553,7 @@ export default function TeamPage() {
                     type="text"
                     value={editPassword}
                     onChange={e => setEditPassword(e.target.value)}
-                    placeholder={`MK hiện tại: ${editingUser?.password || '123456'}`}
+                    placeholder="Nhập mật khẩu mới (tối thiểu 6 ký tự)"
                     className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none font-mono text-xs"
                   />
                 </div>

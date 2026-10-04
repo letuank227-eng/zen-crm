@@ -10,7 +10,8 @@ export interface User {
   teamName?: string;
   phone?: string;
   isLocked: boolean;
-  password?: string;
+  password?: string; // bcrypt hash, server-side only
+  hasPassword?: boolean; // exposed to client instead of password
   targetRevenue: number; // Mục tiêu doanh số tháng (VND)
   targetDeals: number;   // Mục tiêu số deal chốt
 }

@@ -3,15 +3,15 @@ import { readDb, getCurrentUser, logAuditEvent } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   const userId = request.headers.get('x-user-id') || undefined;
-  const user = getCurrentUser(userId);
+  const user = await getCurrentUser(userId);
 
   if (user.role !== 'ADMIN') {
     return NextResponse.json({ error: 'Chỉ Quản trị viên (Admin) mới có quyền Backup toàn bộ dữ liệu' }, { status: 403 });
   }
 
-  const db = readDb();
+  const db = await readDb();
 
-  logAuditEvent(
+  await logAuditEvent(
     user.id,
     user.name,
     'EXPORT',

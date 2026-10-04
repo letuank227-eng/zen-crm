@@ -4,8 +4,8 @@ import { formatDate, canViewCustomerPhone, canViewCustomerPersonalInfo, maskPhon
 
 export async function GET(request: NextRequest) {
   const userId = request.headers.get('x-user-id') || undefined;
-  const user = getCurrentUser(userId);
-  const db = readDb();
+  const user = await getCurrentUser(userId);
+  const db = await readDb();
 
   let leads = filterLeadsByRole(db.leads, user, db);
 
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     leads = leads.filter(l => l.productIds && l.productIds.includes(productId));
   }
 
-  logAuditEvent(
+  await logAuditEvent(
     user.id,
     user.name,
     'EXPORT',

@@ -4,8 +4,8 @@ import { canViewCustomerPersonalInfo, maskPhoneNumber } from '@/lib/utils';
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   const userId = request.headers.get('x-user-id') || undefined;
-  const user = getCurrentUser(userId);
-  const db = readDb();
+  const user = await getCurrentUser(userId);
+  const db = await readDb();
   const lead = db.leads.find(l => l.id === params.id);
 
   if (!lead) {
@@ -61,8 +61,8 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   const userId = request.headers.get('x-user-id') || undefined;
-  const user = getCurrentUser(userId);
-  const db = readDb();
+  const user = await getCurrentUser(userId);
+  const db = await readDb();
   const leadIndex = db.leads.findIndex(l => l.id === params.id);
 
   if (leadIndex === -1) {
@@ -142,10 +142,10 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   });
 
   db.leads[leadIndex] = updatedLead;
-  writeDb(db);
+  await writeDb(db);
 
   if (statusChanged) {
-    logAuditEvent(
+    await logAuditEvent(
       user.id,
       user.name,
       'STAGE_CHANGE',
@@ -155,7 +155,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       { previousValue: previousStatus, newValue: updatedLead.status }
     );
   } else {
-    logAuditEvent(
+    await logAuditEvent(
       user.id,
       user.name,
       'UPDATE',
@@ -170,8 +170,8 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   const userId = request.headers.get('x-user-id') || undefined;
-  const user = getCurrentUser(userId);
-  const db = readDb();
+  const user = await getCurrentUser(userId);
+  const db = await readDb();
 
   if (user.role === 'SALE' || user.role === 'STAFF') {
     return NextResponse.json({ error: 'Chỉ Quản lý hoặc Giám đốc mới có quyền xóa khách hàng' }, { status: 403 });
@@ -184,9 +184,9 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
 
   const deletedLead = db.leads[leadIndex];
   db.leads.splice(leadIndex, 1);
-  writeDb(db);
+  await writeDb(db);
 
-  logAuditEvent(
+  await logAuditEvent(
     user.id,
     user.name,
     'DELETE',

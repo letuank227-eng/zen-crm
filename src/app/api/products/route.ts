@@ -4,7 +4,7 @@ import { generateId } from '@/lib/utils';
 import { Product } from '@/types/crm';
 
 export async function GET(request: NextRequest) {
-  const db = readDb();
+  const db = await readDb();
   const searchParams = request.nextUrl.searchParams;
   const category = searchParams.get('category');
   const search = searchParams.get('search')?.toLowerCase().trim();
@@ -66,13 +66,13 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const userId = request.headers.get('x-user-id') || undefined;
-  const user = getCurrentUser(userId);
+  const user = await getCurrentUser(userId);
 
   if (user.role !== 'ADMIN' && user.role !== 'LEADER') {
     return NextResponse.json({ error: 'Chỉ Quản trị viên hoặc Trưởng nhóm mới có quyền tạo sản phẩm' }, { status: 403 });
   }
 
-  const db = readDb();
+  const db = await readDb();
   const body = await request.json();
   const { name, price, retailPrice, imageUrl, notes, unit, description, sku, category, commissionRate, commissionAmount } = body;
 
@@ -104,9 +104,9 @@ export async function POST(request: NextRequest) {
   };
 
   db.products.push(newProduct);
-  writeDb(db);
+  await writeDb(db);
 
-  logAuditEvent(
+  await logAuditEvent(
     user.id,
     user.name,
     'CREATE',
@@ -120,13 +120,13 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   const userId = request.headers.get('x-user-id') || undefined;
-  const user = getCurrentUser(userId);
+  const user = await getCurrentUser(userId);
 
   if (user.role !== 'ADMIN' && user.role !== 'LEADER') {
     return NextResponse.json({ error: 'Chỉ Admin hoặc Trưởng nhóm mới có quyền cập nhật bảng giá và sản phẩm' }, { status: 403 });
   }
 
-  const db = readDb();
+  const db = await readDb();
   const body = await request.json();
   const { id, price, retailPrice, ...updates } = body;
 
@@ -157,9 +157,9 @@ export async function PUT(request: NextRequest) {
       : {}),
   };
 
-  writeDb(db);
+  await writeDb(db);
 
-  logAuditEvent(
+  await logAuditEvent(
     user.id,
     user.name,
     'UPDATE',
@@ -173,7 +173,7 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   const userId = request.headers.get('x-user-id') || undefined;
-  const user = getCurrentUser(userId);
+  const user = await getCurrentUser(userId);
 
   if (user.role !== 'ADMIN') {
     return NextResponse.json({ error: 'Chỉ Admin mới có quyền xóa sản phẩm khỏi danh mục' }, { status: 403 });
@@ -182,7 +182,7 @@ export async function DELETE(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const id = searchParams.get('id');
 
-  const db = readDb();
+  const db = await readDb();
   const pIndex = db.products.findIndex(p => p.id === id);
   if (pIndex === -1) {
     return NextResponse.json({ error: 'Không tìm thấy sản phẩm' }, { status: 404 });
@@ -190,9 +190,9 @@ export async function DELETE(request: NextRequest) {
 
   const deletedProd = db.products[pIndex];
   db.products.splice(pIndex, 1);
-  writeDb(db);
+  await writeDb(db);
 
-  logAuditEvent(
+  await logAuditEvent(
     user.id,
     user.name,
     'DELETE',

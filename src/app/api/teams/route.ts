@@ -5,8 +5,8 @@ import { Team } from '@/types/crm';
 
 export async function GET(request: NextRequest) {
   const userId = request.headers.get('x-user-id') || undefined;
-  const user = getCurrentUser(userId);
-  const db = readDb();
+  const user = await getCurrentUser(userId);
+  const db = await readDb();
 
   let targetTeams = db.teams;
   if (user.role === 'LEADER') {
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const userId = request.headers.get('x-user-id') || undefined;
-  const user = getCurrentUser(userId);
+  const user = await getCurrentUser(userId);
 
   if (user.role !== 'ADMIN') {
     return NextResponse.json(
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const db = readDb();
+  const db = await readDb();
   const body = await request.json();
   const { name, leaderId, targetRevenue = 300000000 } = body;
 
@@ -85,9 +85,9 @@ export async function POST(request: NextRequest) {
   }
 
   db.teams.push(newTeam);
-  writeDb(db);
+  await writeDb(db);
 
-  logAuditEvent(
+  await logAuditEvent(
     user.id,
     user.name,
     'CREATE',
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   const userId = request.headers.get('x-user-id') || undefined;
-  const user = getCurrentUser(userId);
+  const user = await getCurrentUser(userId);
 
   if (user.role !== 'ADMIN') {
     return NextResponse.json(
@@ -110,7 +110,7 @@ export async function PUT(request: NextRequest) {
     );
   }
 
-  const db = readDb();
+  const db = await readDb();
   const body = await request.json();
   const { id, name, leaderId, targetRevenue } = body;
 
@@ -154,9 +154,9 @@ export async function PUT(request: NextRequest) {
     team.targetRevenue = Number(targetRevenue) || 0;
   }
 
-  writeDb(db);
+  await writeDb(db);
 
-  logAuditEvent(
+  await logAuditEvent(
     user.id,
     user.name,
     'UPDATE',
@@ -170,7 +170,7 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   const userId = request.headers.get('x-user-id') || undefined;
-  const user = getCurrentUser(userId);
+  const user = await getCurrentUser(userId);
 
   if (user.role !== 'ADMIN') {
     return NextResponse.json(
@@ -184,7 +184,7 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: 'Thiếu ID nhóm cần xóa' }, { status: 400 });
   }
 
-  const db = readDb();
+  const db = await readDb();
   const teamIndex = db.teams.findIndex(t => t.id === id);
   if (teamIndex === -1) {
     return NextResponse.json({ error: 'Không tìm thấy nhóm' }, { status: 404 });
@@ -201,9 +201,9 @@ export async function DELETE(request: NextRequest) {
   });
 
   db.teams.splice(teamIndex, 1);
-  writeDb(db);
+  await writeDb(db);
 
-  logAuditEvent(
+  await logAuditEvent(
     user.id,
     user.name,
     'DELETE',

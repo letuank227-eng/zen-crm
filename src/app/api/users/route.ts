@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { readDb, writeDb, getCurrentUser, logAuditEvent } from '@/lib/db';
-import { generateId, generateRandomPassword } from '@/lib/utils';
+import { readDb, writeDb, getCurrentUser, logAuditEvent, toSafeUser } from '@/lib/db';
+import { generateId } from '@/lib/utils';
+import { hashPassword, generateTempPassword, MIN_PASSWORD_LENGTH } from '@/lib/password';
 import { User, Role } from '@/types/crm';
+
+const VALID_ROLES: Role[] = ['ADMIN', 'LEADER', 'SALE', 'STAFF'];
 
 export async function GET(request: NextRequest) {
   const userId = request.headers.get('x-user-id') || undefined;
-  const user = getCurrentUser(userId);
-  const db = readDb();
+  const user = await getCurrentUser(userId);
+  const db = await readDb();
   const searchParams = request.nextUrl.searchParams;
   const dateFrom = searchParams.get('dateFrom');
   const dateTo = searchParams.get('dateTo');
@@ -68,12 +71,12 @@ export async function GET(request: NextRequest) {
     const kpiProgress = u.targetRevenue > 0 ? Math.round((actualRevenue / u.targetRevenue) * 100) : 0;
 
     return {
-      ...u,
+      ...toSafeUser(u),
       activeLeads,
       wonDealsCount: wonDeals.length,
       actualRevenue,
       kpiProgress,
-      password: u.password || '123456',
+      hasPassword: !!u.password,
     };
   });
 
@@ -85,13 +88,13 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const userId = request.headers.get('x-user-id') || undefined;
-  const user = getCurrentUser(userId);
+  const user = await getCurrentUser(userId);
 
   if (user.role !== 'ADMIN' && user.role !== 'LEADER') {
     return NextResponse.json({ error: 'Chỉ Giám đốc và Quản lý mới có quyền tạo người dùng' }, { status: 403 });
   }
 
-  const db = readDb();
+  const db = await readDb();
   const body = await request.json();
   let { name, email, role = 'SALE', teamId, phone, targetRevenue = 150000000, targetDeals = 8, password } = body;
 
@@ -121,8 +124,16 @@ export async function POST(request: NextRequest) {
 
   const team = db.teams.find(t => t.id === teamId);
 
-  // Mật khẩu: sử dụng mật khẩu được truyền vào (chữ và số ngẫu nhiên) hoặc tự sinh mã ngẫu nhiên
-  const finalPassword = password && password.trim() ? password.trim() : generateRandomPassword(8);
+  if (!VALID_ROLES.includes(role)) role = 'SALE';
+
+  // Mật khẩu: dùng mật khẩu được nhập hoặc tự sinh ngẫu nhiên. Chỉ lưu bản mã hoá.
+  const finalPassword = password && password.trim() ? password.trim() : generateTempPassword(10);
+  if (finalPassword.length < MIN_PASSWORD_LENGTH) {
+    return NextResponse.json(
+      { error: `Mật khẩu phải có tối thiểu ${MIN_PASSWORD_LENGTH} ký tự` },
+      { status: 400 }
+    );
+  }
 
   const newUser: User = {
     id: generateId('usr'),
@@ -133,35 +144,36 @@ export async function POST(request: NextRequest) {
     teamName: team?.name,
     phone: phone || '',
     isLocked: false,
-    password: finalPassword,
+    password: await hashPassword(finalPassword),
     targetRevenue: Number(targetRevenue) || 0,
     targetDeals: Number(targetDeals) || 0,
   };
 
   db.users.push(newUser);
-  writeDb(db);
+  await writeDb(db);
 
-  logAuditEvent(
+  await logAuditEvent(
     user.id,
     user.name,
     'CREATE',
     'USER',
     newUser.id,
-    `Cấp quyền truy cập CRM cho Gmail: ${newUser.email} (${newUser.name}) - Vai trò: ${newUser.role} - Mật khẩu cấp: ${newUser.password}`
+    `Cấp quyền truy cập CRM cho Gmail: ${newUser.email} (${newUser.name}) - Vai trò: ${newUser.role}`
   );
 
-  return NextResponse.json({ user: newUser }, { status: 201 });
+  // Plaintext password is returned ONCE to the creator so they can hand it over; it is not stored.
+  return NextResponse.json({ user: { ...toSafeUser(newUser), password: finalPassword } }, { status: 201 });
 }
 
 export async function PUT(request: NextRequest) {
   const userId = request.headers.get('x-user-id') || undefined;
-  const user = getCurrentUser(userId);
+  const user = await getCurrentUser(userId);
 
   if (user.role !== 'ADMIN' && user.role !== 'LEADER') {
     return NextResponse.json({ error: 'Bạn không có quyền chỉnh sửa thông tin người dùng' }, { status: 403 });
   }
 
-  const db = readDb();
+  const db = await readDb();
   const body = await request.json();
   const { id, isLocked, targetRevenue, targetDeals, teamId, role, phone, name, password } = body;
 
@@ -186,9 +198,24 @@ export async function PUT(request: NextRequest) {
   if (name !== undefined) targetUser.name = name;
   if (phone !== undefined) targetUser.phone = phone;
   if (isLocked !== undefined && user.role === 'ADMIN') targetUser.isLocked = isLocked;
-  if (role !== undefined && user.role === 'ADMIN') targetUser.role = role;
-  if (password !== undefined && user.role === 'ADMIN' && password.trim()) {
-    targetUser.password = password.trim();
+  if (role !== undefined && user.role === 'ADMIN' && VALID_ROLES.includes(role)) targetUser.role = role;
+
+  // Password changes: ADMIN may set an explicit password; ADMIN/LEADER (own team) may reset to a
+  // random temporary password. Only the bcrypt hash is stored; plaintext is returned once.
+  let issuedPassword: string | undefined;
+  if (password !== undefined && user.role === 'ADMIN' && String(password).trim()) {
+    issuedPassword = String(password).trim();
+  } else if (body.resetPassword === true) {
+    issuedPassword = generateTempPassword(10);
+  }
+  if (issuedPassword !== undefined) {
+    if (issuedPassword.length < MIN_PASSWORD_LENGTH) {
+      return NextResponse.json(
+        { error: `Mật khẩu phải có tối thiểu ${MIN_PASSWORD_LENGTH} ký tự` },
+        { status: 400 }
+      );
+    }
+    targetUser.password = await hashPassword(issuedPassword);
   }
   if (targetRevenue !== undefined) targetUser.targetRevenue = Number(targetRevenue);
   if (targetDeals !== undefined) targetUser.targetDeals = Number(targetDeals);
@@ -199,23 +226,28 @@ export async function PUT(request: NextRequest) {
     targetUser.teamName = team?.name;
   }
 
-  writeDb(db);
+  await writeDb(db);
 
-  logAuditEvent(
+  await logAuditEvent(
     user.id,
     user.name,
     'UPDATE',
     'USER',
     id,
-    `Cập nhật tài khoản/quyền hạn nhân viên: ${targetUser.name}`
+    issuedPassword !== undefined
+      ? `Đặt lại mật khẩu / cập nhật tài khoản nhân viên: ${targetUser.name}`
+      : `Cập nhật tài khoản/quyền hạn nhân viên: ${targetUser.name}`
   );
 
-  return NextResponse.json({ user: targetUser });
+  return NextResponse.json({
+    user: { ...toSafeUser(targetUser), hasPassword: !!targetUser.password },
+    ...(issuedPassword !== undefined ? { issuedPassword } : {}),
+  });
 }
 
 export async function DELETE(request: NextRequest) {
   const userId = request.headers.get('x-user-id') || undefined;
-  const user = getCurrentUser(userId);
+  const user = await getCurrentUser(userId);
 
   if (user.role !== 'ADMIN' && user.role !== 'LEADER') {
     return NextResponse.json({ error: 'Bạn không có quyền gỡ bỏ người dùng' }, { status: 403 });
@@ -230,7 +262,7 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: 'Không thể xóa tài khoản của chính bạn' }, { status: 400 });
   }
 
-  const db = readDb();
+  const db = await readDb();
   const targetIndex = db.users.findIndex(u => u.id === id);
   if (targetIndex === -1) {
     return NextResponse.json({ error: 'Không tìm thấy người dùng' }, { status: 404 });
@@ -250,9 +282,9 @@ export async function DELETE(request: NextRequest) {
   }
 
   db.users.splice(targetIndex, 1);
-  writeDb(db);
+  await writeDb(db);
 
-  logAuditEvent(
+  await logAuditEvent(
     user.id,
     user.name,
     'DELETE',

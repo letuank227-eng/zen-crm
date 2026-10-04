@@ -5,8 +5,8 @@ import { Note } from '@/types/crm';
 
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   const userId = request.headers.get('x-user-id') || undefined;
-  const user = getCurrentUser(userId);
-  const db = readDb();
+  const user = await getCurrentUser(userId);
+  const db = await readDb();
 
   const body = await request.json();
   const { content } = body;
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
   db.leads[leadIndex].notesCount = (db.leads[leadIndex].notesCount || 0) + 1;
   db.leads[leadIndex].updatedAt = new Date().toISOString();
 
-  writeDb(db);
+  await writeDb(db);
 
   return NextResponse.json({ note: newNote });
 }

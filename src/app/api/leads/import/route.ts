@@ -5,8 +5,8 @@ import { Lead, Order } from '@/types/crm';
 
 export async function POST(request: NextRequest) {
   const userId = request.headers.get('x-user-id') || undefined;
-  const user = getCurrentUser(userId);
-  const db = readDb();
+  const user = await getCurrentUser(userId);
+  const db = await readDb();
 
   const body = await request.json();
   const { rows, autoRoundRobin = false, assignedSaleId, defaultSource } = body;
@@ -128,9 +128,9 @@ export async function POST(request: NextRequest) {
     db.orders.unshift(order);
   });
 
-  writeDb(db);
+  await writeDb(db);
 
-  logAuditEvent(
+  await logAuditEvent(
     user.id,
     user.name,
     'IMPORT',

@@ -4,8 +4,8 @@ import { maskSaleName, parseDateBoundary } from '@/lib/utils';
 
 export async function GET(request: NextRequest) {
   const userId = request.headers.get('x-user-id') || undefined;
-  const user = getCurrentUser(userId);
-  const db = readDb();
+  const user = await getCurrentUser(userId);
+  const db = await readDb();
 
   const searchParams = request.nextUrl.searchParams;
   const dateFrom = searchParams.get('dateFrom');

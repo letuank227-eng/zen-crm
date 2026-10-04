@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { readDb, writeDb, getCurrentUser, logAuditEvent } from '@/lib/db';
+import { readDb, writeDb, logAuditEvent } from '@/lib/db';
+import { hashPassword, verifyPassword, MIN_PASSWORD_LENGTH } from '@/lib/password';
 
 export async function POST(request: NextRequest) {
   try {
-    const userId = request.headers.get('x-user-id') || request.cookies.get('zen_crm_user_id')?.value;
+    // Set by middleware from the verified session cookie.
+    const userId = request.headers.get('x-user-id');
     if (!userId) {
       return NextResponse.json({ error: 'Chưa đăng nhập' }, { status: 401 });
     }
@@ -11,55 +13,32 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { oldPassword, newPassword } = body;
 
-    if (!newPassword || newPassword.trim().length < 6) {
+    if (!newPassword || newPassword.trim().length < MIN_PASSWORD_LENGTH) {
       return NextResponse.json(
-        { error: 'Mật khẩu mới phải có tối thiểu 6 ký tự' },
+        { error: `Mật khẩu mới phải có tối thiểu ${MIN_PASSWORD_LENGTH} ký tự` },
         { status: 400 }
       );
     }
 
-    const db = readDb();
-    const userIndex = db.users.findIndex(u => u.id === userId);
-    if (userIndex === -1) {
+    const db = await readDb();
+    const user = db.users.find(u => u.id === userId);
+    if (!user) {
       return NextResponse.json({ error: 'Không tìm thấy người dùng' }, { status: 404 });
     }
 
-    const user = db.users[userIndex];
-
-    // Check old password
-    const isOldValid =
-      user.password === oldPassword ||
-      oldPassword === 'zengarden' ||
-      (!user.password && oldPassword === 'zengarden');
-
-    if (!isOldValid) {
-      return NextResponse.json(
-        { error: 'Mật khẩu hiện tại/mật khẩu được cấp trước đó không đúng' },
-        { status: 400 }
-      );
+    const { ok } = await verifyPassword(String(oldPassword || ''), user.password);
+    if (!ok) {
+      return NextResponse.json({ error: 'Mật khẩu hiện tại không đúng' }, { status: 400 });
     }
 
-    user.password = newPassword.trim();
-    writeDb(db);
+    user.password = await hashPassword(newPassword.trim());
+    await writeDb(db);
 
-    logAuditEvent(
-      user.id,
-      user.name,
-      'UPDATE',
-      'USER',
-      user.id,
-      `Đổi mật khẩu tài khoản thành công: ${user.name}`
-    );
+    await logAuditEvent(user.id, user.name, 'UPDATE', 'USER', user.id, `Đổi mật khẩu tài khoản: ${user.name}`);
 
-    return NextResponse.json({
-      success: true,
-      message: 'Đổi mật khẩu thành công',
-    });
+    return NextResponse.json({ success: true, message: 'Đổi mật khẩu thành công' });
   } catch (error: any) {
     console.error('Change password error:', error);
-    return NextResponse.json(
-      { error: 'Đã xảy ra lỗi khi đổi mật khẩu' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Đã xảy ra lỗi khi đổi mật khẩu' }, { status: 500 });
   }
 }

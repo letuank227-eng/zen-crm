@@ -3,8 +3,8 @@ import { readDb, writeDb, getCurrentUser, logAuditEvent } from '@/lib/db';
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   const userId = request.headers.get('x-user-id') || undefined;
-  const user = getCurrentUser(userId);
-  const db = readDb();
+  const user = await getCurrentUser(userId);
+  const db = await readDb();
   const deal = db.deals.find(d => d.id === params.id);
 
   if (!deal) {
@@ -46,8 +46,8 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   const userId = request.headers.get('x-user-id') || undefined;
-  const user = getCurrentUser(userId);
-  const db = readDb();
+  const user = await getCurrentUser(userId);
+  const db = await readDb();
   const dealIndex = db.deals.findIndex(d => d.id === params.id);
 
   if (dealIndex === -1) {
@@ -91,10 +91,10 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   };
 
   db.deals[dealIndex] = updatedDeal;
-  writeDb(db);
+  await writeDb(db);
 
   if (stageChanged) {
-    logAuditEvent(
+    await logAuditEvent(
       user.id,
       user.name,
       'STAGE_CHANGE',
@@ -108,7 +108,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       }
     );
   } else {
-    logAuditEvent(
+    await logAuditEvent(
       user.id,
       user.name,
       'UPDATE',
@@ -123,8 +123,8 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   const userId = request.headers.get('x-user-id') || undefined;
-  const user = getCurrentUser(userId);
-  const db = readDb();
+  const user = await getCurrentUser(userId);
+  const db = await readDb();
 
   if (user.role === 'SALE' || user.role === 'STAFF') {
     return NextResponse.json({ error: 'Chỉ Quản lý hoặc Giám đốc mới có quyền xóa Deal' }, { status: 403 });
@@ -146,9 +146,9 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
   }
 
   db.deals.splice(dealIndex, 1);
-  writeDb(db);
+  await writeDb(db);
 
-  logAuditEvent(
+  await logAuditEvent(
     user.id,
     user.name,
     'DELETE',

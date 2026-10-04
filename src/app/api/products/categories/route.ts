@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { readDb, writeDb, getCurrentUser, logAuditEvent } from '@/lib/db';
 
 export async function GET() {
-  const db = readDb();
+  const db = await readDb();
   const categoriesSet = new Set<string>(db.productCategories || [
     'Ráy & Dương Xỉ',
     'Bucephalandra & Tiêu Thảo',
@@ -23,9 +23,9 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   const userId = request.headers.get('x-user-id') || undefined;
-  const user = getCurrentUser(userId);
+  const user = await getCurrentUser(userId);
 
-  const db = readDb();
+  const db = await readDb();
   const body = await request.json();
   const categoryName = body.categoryName || body.name;
 
@@ -40,9 +40,9 @@ export async function POST(request: NextRequest) {
 
   if (!db.productCategories.includes(name)) {
     db.productCategories.push(name);
-    writeDb(db);
+    await writeDb(db);
 
-    logAuditEvent(
+    await logAuditEvent(
       user.id,
       user.name,
       'CREATE',
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   const userId = request.headers.get('x-user-id') || undefined;
-  const user = getCurrentUser(userId);
+  const user = await getCurrentUser(userId);
 
   if (user.role !== 'ADMIN') {
     return NextResponse.json({ error: 'Chỉ Quản trị viên mới có quyền xóa nhóm danh mục' }, { status: 403 });
@@ -70,12 +70,12 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: 'Thiếu tên danh mục cần xóa' }, { status: 400 });
   }
 
-  const db = readDb();
+  const db = await readDb();
   if (db.productCategories) {
     db.productCategories = db.productCategories.filter(c => c !== name);
-    writeDb(db);
+    await writeDb(db);
 
-    logAuditEvent(
+    await logAuditEvent(
       user.id,
       user.name,
       'DELETE',

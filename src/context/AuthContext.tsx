@@ -22,7 +22,6 @@ interface AuthContextType {
   register: (data: RegisterData) => Promise<{ success: boolean; error?: string; user?: User }>;
   logout: () => Promise<void>;
   changePassword: (oldPassword: string, newPassword: string) => Promise<{ success: boolean; error?: string }>;
-  switchUser: (userId: string) => void;
   fetchWithAuth: (url: string, options?: RequestInit) => Promise<Response>;
   refreshSession: () => Promise<void>;
 }
@@ -35,38 +34,27 @@ const AuthContext = createContext<AuthContextType>({
   register: async () => ({ success: false, error: 'Chưa khởi tạo AuthContext' }),
   logout: async () => {},
   changePassword: async () => ({ success: false, error: 'Chưa khởi tạo AuthContext' }),
-  switchUser: () => {},
   fetchWithAuth: async () => new Response(),
   refreshSession: async () => {},
 });
 
+/**
+ * Session state lives in an httpOnly signed cookie set by /api/auth/login; the browser
+ * sends it automatically. The client never chooses which user it is.
+ */
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchUsersAndSession = useCallback(async (preferredUserId?: string) => {
+  const fetchUsersAndSession = useCallback(async () => {
     try {
-      const storedId = typeof window !== 'undefined' ? localStorage.getItem('zen_crm_user_id') : null;
-      const activeId = preferredUserId !== undefined ? preferredUserId : storedId;
-
-      const url = activeId ? `/api/auth/current?userId=${encodeURIComponent(activeId)}` : '/api/auth/current';
-      const res = await fetch(url);
+      const res = await fetch('/api/auth/current', { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
         setUsers(data.users || []);
-        if (data.currentUser) {
-          setCurrentUser(data.currentUser);
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('zen_crm_user_id', data.currentUser.id);
-          }
-        } else {
-          setCurrentUser(null);
-          if (typeof window !== 'undefined' && !activeId) {
-            localStorage.removeItem('zen_crm_user_id');
-          }
-        }
+        setCurrentUser(data.currentUser || null);
       }
     } catch (err) {
       console.error('Failed to load session:', err);
@@ -76,6 +64,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    // Clean up the legacy client-side id from older versions.
+    if (typeof window !== 'undefined') localStorage.removeItem('zen_crm_user_id');
     fetchUsersAndSession();
   }, [fetchUsersAndSession]);
 
@@ -93,39 +83,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       setCurrentUser(data.user);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('zen_crm_user_id', data.user.id);
-      }
-      await fetchUsersAndSession(data.user.id);
+      await fetchUsersAndSession();
       return { success: true, user: data.user };
     } catch (err: any) {
       return { success: false, error: err.message || 'Lỗi mạng khi đăng nhập' };
     }
   };
 
-  const register = async (regData: RegisterData) => {
-    try {
-      const res = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(regData),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        return { success: false, error: data.error || 'Đăng ký không thành công' };
-      }
-
-      setCurrentUser(data.user);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('zen_crm_user_id', data.user.id);
-      }
-      await fetchUsersAndSession(data.user.id);
-      return { success: true, user: data.user };
-    } catch (err: any) {
-      return { success: false, error: err.message || 'Lỗi mạng khi đăng ký' };
-    }
-  };
+  // Self-registration is disabled server-side; kept for API compatibility.
+  const register = async (_regData: RegisterData) => ({
+    success: false,
+    error: 'Chức năng tự đăng ký đã tắt. Vui lòng liên hệ Quản trị viên để được cấp tài khoản.',
+  });
 
   const logout = async () => {
     try {
@@ -134,9 +103,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error('Logout error:', err);
     } finally {
       setCurrentUser(null);
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('zen_crm_user_id');
-      }
+      setUsers([]);
       router.push('/login');
     }
   };
@@ -159,24 +126,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const switchUser = (userId: string) => {
-    setIsLoading(true);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('zen_crm_user_id', userId);
-    }
-    fetchUsersAndSession(userId);
-  };
-
   const refreshSession = async () => {
     await fetchUsersAndSession();
   };
 
+  // The session cookie is sent automatically; on 401 the session expired -> back to login.
   const fetchWithAuth = async (url: string, options: RequestInit = {}): Promise<Response> => {
-    const headers = new Headers(options.headers || {});
-    if (currentUser?.id) {
-      headers.set('x-user-id', currentUser.id);
+    const res = await fetch(url, { ...options, credentials: 'same-origin' });
+    if (res.status === 401 && currentUser) {
+      setCurrentUser(null);
+      router.push('/login');
     }
-    return fetch(url, { ...options, headers });
+    return res;
   };
 
   return (
@@ -189,7 +150,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         register,
         logout,
         changePassword,
-        switchUser,
         fetchWithAuth,
         refreshSession,
       }}

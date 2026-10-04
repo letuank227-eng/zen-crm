@@ -3,8 +3,8 @@ import { readDb, writeDb, getCurrentUser, logAuditEvent } from '@/lib/db';
 
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   const userId = request.headers.get('x-user-id') || undefined;
-  const user = getCurrentUser(userId);
-  const db = readDb();
+  const user = await getCurrentUser(userId);
+  const db = await readDb();
 
   const body = await request.json();
   const { newSaleId, reason } = body;
@@ -67,9 +67,9 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
   });
   lead.notesCount = (lead.notesCount || 0) + 1;
 
-  writeDb(db);
+  await writeDb(db);
 
-  logAuditEvent(
+  await logAuditEvent(
     user.id,
     user.name,
     'TRANSFER',

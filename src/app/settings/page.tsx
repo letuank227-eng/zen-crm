@@ -229,9 +229,35 @@ export default function SettingsPage() {
     }
   };
 
-  // Copy password of a specific user in table
+  // Temp passwords issued in this browser session (shown once; server stores only hashes)
+  const [issuedPasswords, setIssuedPasswords] = useState<Record<string, string>>({});
+
+  // Reset a user's password to a random temporary one
+  const handleResetPassword = async (user: User) => {
+    if (!confirm(`Cấp mật khẩu tạm mới cho ${user.name}? Mật khẩu cũ sẽ không dùng được nữa.`)) return;
+    try {
+      const res = await fetchWithAuth('/api/users', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: user.id, resetPassword: true }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.issuedPassword) {
+        setNotification(data.error || 'Cấp lại mật khẩu thất bại');
+      } else {
+        setIssuedPasswords(prev => ({ ...prev, [user.id]: data.issuedPassword }));
+        setNotification(`Đã cấp mật khẩu tạm cho ${user.name}. Hãy sao chép và gửi cho nhân viên (chỉ hiển thị 1 lần).`);
+      }
+      setTimeout(() => setNotification(''), 4000);
+    } catch (err: any) {
+      setNotification(err.message || 'Lỗi kết nối mạng');
+    }
+  };
+
+  // Copy the freshly issued temp password of a user
   const handleCopyUserPassword = async (user: User) => {
-    const pass = user.password || 'zengarden';
+    const pass = issuedPasswords[user.id];
+    if (!pass) return;
     const ok = await copyToClipboard(pass);
     if (ok) {
       setCopiedUserId(user.id);
@@ -239,9 +265,10 @@ export default function SettingsPage() {
     }
   };
 
-  // Copy full credentials of a specific user in table
+  // Copy full credentials (only available right after issuing a temp password)
   const handleCopyUserFullCreds = async (user: User) => {
-    const pass = user.password || 'zengarden';
+    const pass = issuedPasswords[user.id];
+    if (!pass) return;
     const msg = buildShareMessage(user.email, pass, user.name);
     const ok = await copyToClipboard(msg);
     if (ok) {
@@ -1109,7 +1136,7 @@ export default function SettingsPage() {
                   <th className="py-2.5 px-4 font-bold whitespace-nowrap">Thành viên / Gmail</th>
                   <th className="py-2.5 px-4 font-bold whitespace-nowrap">Vai trò</th>
                   <th className="py-2.5 px-4 font-bold whitespace-nowrap">Đội nhóm</th>
-                  <th className="py-2.5 px-4 font-bold whitespace-nowrap">Mật khẩu cấp (Chữ &amp; Số)</th>
+                  <th className="py-2.5 px-4 font-bold whitespace-nowrap">Mật khẩu</th>
                   <th className="py-2.5 px-4 font-bold whitespace-nowrap">Trạng thái</th>
                   <th className="py-2.5 px-4 font-bold text-right whitespace-nowrap">Thao tác</th>
                 </tr>
@@ -1117,7 +1144,6 @@ export default function SettingsPage() {
               <tbody className="divide-y divide-slate-100">
                 {userList.map(u => {
                   const isCurrent = u.id === currentUser?.id;
-                  const userPassword = u.password || 'zengarden';
                   const isCopied = copiedUserId === u.id;
 
                   return (
@@ -1189,25 +1215,43 @@ export default function SettingsPage() {
                         {u.teamName || 'Ban Quản Trị'}
                       </td>
 
-                      {/* Mật khẩu cấp: Có nút Copy tiện lợi */}
+                      {/* Mật khẩu: chỉ lưu bản mã hoá, không xem được. Có nút cấp lại mật khẩu tạm. */}
                       <td className="py-3 px-4 whitespace-nowrap">
-                        <div className="inline-flex items-center gap-1.5 bg-slate-100/90 border border-slate-200 rounded-lg px-2.5 py-1 whitespace-nowrap">
-                          <span className="font-mono text-xs font-bold text-slate-800 tracking-wider">
-                            {userPassword}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => handleCopyUserPassword(u)}
-                            className="p-1 text-slate-500 hover:text-emerald-700 hover:bg-white rounded transition-colors cursor-pointer"
-                            title="Sao chép mật khẩu"
-                          >
-                            {isCopied ? (
-                              <Check className="w-3.5 h-3.5 text-emerald-600" />
-                            ) : (
-                              <Copy className="w-3.5 h-3.5" />
+                        {issuedPasswords[u.id] ? (
+                          <div className="inline-flex items-center gap-1.5 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1 whitespace-nowrap">
+                            <span className="font-mono text-xs font-bold text-amber-900 tracking-wider">
+                              {issuedPasswords[u.id]}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleCopyUserPassword(u)}
+                              className="p-1 text-amber-700 hover:text-emerald-700 hover:bg-white rounded transition-colors cursor-pointer"
+                              title="Sao chép mật khẩu tạm (chỉ hiển thị 1 lần)"
+                            >
+                              {isCopied ? (
+                                <Check className="w-3.5 h-3.5 text-emerald-600" />
+                              ) : (
+                                <Copy className="w-3.5 h-3.5" />
+                              )}
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="inline-flex items-center gap-2 whitespace-nowrap">
+                            <span className="font-mono text-xs text-slate-400 tracking-widest">
+                              {u.hasPassword === false ? 'Chưa đặt' : '••••••••'}
+                            </span>
+                            {!isCurrent && (isAdmin || (isLeader && u.role !== 'ADMIN' && u.role !== 'LEADER')) && (
+                              <button
+                                type="button"
+                                onClick={() => handleResetPassword(u)}
+                                className="text-[11px] font-semibold text-emerald-700 hover:text-emerald-800 underline cursor-pointer"
+                                title="Cấp mật khẩu tạm mới cho nhân viên"
+                              >
+                                Cấp lại
+                              </button>
                             )}
-                          </button>
-                        </div>
+                          </div>
+                        )}
                       </td>
 
                       <td className="py-3 px-4 whitespace-nowrap">
@@ -1224,15 +1268,17 @@ export default function SettingsPage() {
 
                       <td className="py-3 px-4 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1.5">
-                          {/* Nút gửi thông tin đăng nhập */}
-                          <button
-                            type="button"
-                            onClick={() => handleCopyUserFullCreds(u)}
-                            className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition-colors cursor-pointer"
-                            title="Sao chép toàn bộ thông tin đăng nhập để gửi nhân viên"
-                          >
-                            <Send className="w-3.5 h-3.5" />
-                          </button>
+                          {/* Nút gửi thông tin đăng nhập (chỉ khi vừa cấp mật khẩu tạm) */}
+                          {issuedPasswords[u.id] && (
+                            <button
+                              type="button"
+                              onClick={() => handleCopyUserFullCreds(u)}
+                              className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition-colors cursor-pointer"
+                              title="Sao chép toàn bộ thông tin đăng nhập để gửi nhân viên"
+                            >
+                              <Send className="w-3.5 h-3.5" />
+                            </button>
+                          )}
 
                           {/* Khóa/Mở khóa */}
                           {!isCurrent && (isAdmin || (isLeader && u.role !== 'ADMIN' && u.role !== 'LEADER')) && (
