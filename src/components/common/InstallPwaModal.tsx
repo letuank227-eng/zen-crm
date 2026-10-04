@@ -1,12 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Smartphone, Download, X, QrCode, Share2, PlusSquare, Check, Copy } from 'lucide-react';
-
-interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
-}
+import { usePwa } from '@/context/PwaInstallContext';
 
 export default function InstallPwaModal({
   isOpen,
@@ -15,51 +11,18 @@ export default function InstallPwaModal({
   isOpen: boolean;
   onClose: () => void;
 }) {
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [isIOS, setIsIOS] = useState(false);
-  const [isStandalone, setIsStandalone] = useState(false);
+  const { isIOS, isInstalled, installApp } = usePwa();
   const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    // Check if running on iOS
-    const userAgent = window.navigator.userAgent.toLowerCase();
-    const isIosDevice = /iphone|ipad|ipod/.test(userAgent);
-    setIsIOS(isIosDevice);
-
-    // Check if already in standalone (app mode)
-    const isApp =
-      window.matchMedia('(display-mode: standalone)').matches ||
-      (window.navigator as unknown as { standalone?: boolean }).standalone === true;
-    setIsStandalone(isApp);
-
-    // Capture beforeinstallprompt for Android / Chrome
-    const handleBeforeInstallPrompt = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
-    };
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    };
-  }, []);
-
-  const handleInstallClick = async () => {
-    if (deferredPrompt) {
-      await deferredPrompt.prompt();
-      const choiceResult = await deferredPrompt.userChoice;
-      if (choiceResult.outcome === 'accepted') {
-        setDeferredPrompt(null);
-        onClose();
-      }
-    }
-  };
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText('https://zen-crm-two.vercel.app');
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
+  };
+
+  const handleDirectInstall = async () => {
+    await installApp();
+    onClose();
   };
 
   if (!isOpen) return null;
@@ -75,7 +38,7 @@ export default function InstallPwaModal({
             </div>
             <div>
               <h3 className="font-bold text-base">Cài Đặt App ZEN CRM</h3>
-              <p className="text-xs text-emerald-200">Sử dụng mượt mà như app gốc trên điện thoại</p>
+              <p className="text-xs text-emerald-200">Tự động cài đặt thẳng vào máy của bạn</p>
             </div>
           </div>
           <button
@@ -88,42 +51,40 @@ export default function InstallPwaModal({
 
         {/* Modal Content */}
         <div className="p-5 overflow-y-auto space-y-4">
-          {isStandalone ? (
+          {isInstalled ? (
             <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-center space-y-2">
               <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto">
                 <Check className="w-5 h-5" />
               </div>
               <p className="text-sm font-semibold text-emerald-900">
-                Bạn đang sử dụng phiên bản App ZEN CRM!
+                Ứng dụng ZEN CRM đã được cài trên máy của bạn!
               </p>
               <p className="text-xs text-emerald-700">
-                Ứng dụng đã được cài đặt thành công trên màn hình thiết bị của bạn.
+                Bạn có thể mở trực tiếp từ biểu tượng trên màn hình chính bất cứ lúc nào.
               </p>
             </div>
           ) : (
             <>
-              {/* Native Prompt button if supported */}
-              {deferredPrompt && (
-                <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-center space-y-3">
-                  <p className="text-xs text-emerald-800 font-medium">
-                    Thiết bị của bạn hỗ trợ cài đặt tự động chỉ với 1 chạm:
-                  </p>
-                  <button
-                    onClick={handleInstallClick}
-                    className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
-                  >
-                    <Download className="w-4 h-4" />
-                    Cài Đặt App Lên Màn Hình Ngay
-                  </button>
-                </div>
-              )}
+              {/* Direct Install Button */}
+              <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-center space-y-3">
+                <p className="text-xs text-emerald-800 font-medium">
+                  Bấm nút bên dưới để hệ thống tự động cài đặt ứng dụng thẳng vào máy:
+                </p>
+                <button
+                  onClick={handleDirectInstall}
+                  className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-xl font-bold text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Download className="w-4 h-4" />
+                  Bấm Vào Đây Để Cài Đặt Thẳng Vào Máy
+                </button>
+              </div>
 
-              {/* iPhone / iPad (iOS) Instructions */}
-              {isIOS ? (
+              {/* iOS Safari Special Step (Only on iOS because Apple does not allow 1-click JS install) */}
+              {isIOS && (
                 <div className="space-y-3 p-4 rounded-xl bg-slate-50 border border-slate-200">
                   <div className="font-bold text-xs uppercase tracking-wider text-slate-700 flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                    Hướng dẫn cài đặt trên iPhone / iPad (Safari)
+                    Thao tác trên iPhone / iPad (Safari)
                   </div>
                   <ol className="space-y-2.5 text-xs text-slate-700">
                     <li className="flex items-start gap-2.5">
@@ -131,21 +92,13 @@ export default function InstallPwaModal({
                         1
                       </span>
                       <span>
-                        Mở bằng trình duyệt <strong>Safari</strong> trên iPhone.
+                        Bấm nút <strong>Chia sẻ</strong> (biểu tượng hình vuông có mũi tên{' '}
+                        <Share2 className="inline w-3.5 h-3.5 text-blue-600" /> ở dưới cùng Safari).
                       </span>
                     </li>
                     <li className="flex items-start gap-2.5">
                       <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">
                         2
-                      </span>
-                      <span>
-                        Bấm nút <strong>Chia sẻ</strong> (biểu tượng hình vuông có mũi tên{' '}
-                        <Share2 className="inline w-3.5 h-3.5 text-blue-600" /> ở thanh dưới cùng).
-                      </span>
-                    </li>
-                    <li className="flex items-start gap-2.5">
-                      <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">
-                        3
                       </span>
                       <span>
                         Cuộn xuống chọn <strong>&quot;Thêm vào MH chính&quot;</strong> (Add to Home Screen{' '}
@@ -154,58 +107,22 @@ export default function InstallPwaModal({
                     </li>
                   </ol>
                 </div>
-              ) : (
-                /* Android / Chrome Instructions if native prompt not triggered */
-                !deferredPrompt && (
-                  <div className="space-y-3 p-4 rounded-xl bg-slate-50 border border-slate-200">
-                    <div className="font-bold text-xs uppercase tracking-wider text-slate-700 flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                      Hướng dẫn cài đặt trên Android / Google Chrome
-                    </div>
-                    <ol className="space-y-2.5 text-xs text-slate-700">
-                      <li className="flex items-start gap-2.5">
-                        <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">
-                          1
-                        </span>
-                        <span>
-                          Nhấn vào biểu tượng <strong>Menu 3 chấm (⋮)</strong> ở góc trên bên phải trình duyệt.
-                        </span>
-                      </li>
-                      <li className="flex items-start gap-2.5">
-                        <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">
-                          2
-                        </span>
-                        <span>
-                          Chọn <strong>&quot;Cài đặt ứng dụng&quot;</strong> hoặc <strong>&quot;Thêm vào Màn hình chính&quot;</strong>.
-                        </span>
-                      </li>
-                      <li className="flex items-start gap-2.5">
-                        <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">
-                          3
-                        </span>
-                        <span>
-                          Biểu tượng <strong>ZEN CRM</strong> sẽ xuất hiện trên màn hình điện thoại như một App thông thường!
-                        </span>
-                      </li>
-                    </ol>
-                  </div>
-                )
               )}
 
               {/* QR Code Section for scanning from Computer to Phone */}
-              <div className="p-4 rounded-xl bg-emerald-50/50 border border-emerald-100 flex flex-col items-center text-center space-y-2.5">
-                <div className="flex items-center gap-2 text-xs font-bold text-emerald-900">
-                  <QrCode className="w-4 h-4 text-emerald-700" />
-                  Quét mã mở trên Điện thoại:
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-col items-center text-center space-y-2.5">
+                <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
+                  <QrCode className="w-4 h-4 text-emerald-600" />
+                  Hoặc quét mã để tải về điện thoại:
                 </div>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https%3A%2F%2Fzen-crm-two.vercel.app"
                   alt="QR Code ZEN CRM"
-                  className="w-32 h-32 rounded-xl bg-white p-2 shadow-sm border border-emerald-200"
+                  className="w-28 h-28 rounded-xl bg-white p-2 shadow-sm border border-slate-200"
                 />
                 <p className="text-[11px] text-slate-500">
-                  Dùng Camera điện thoại quét mã trên để mở trang đăng nhập và cài app ngay lập tức.
+                  Dùng Camera điện thoại quét mã để mở và cài App ngay lập tức.
                 </p>
               </div>
 

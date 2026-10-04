@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useSidebar } from '@/context/SidebarContext';
+import { usePwa } from '@/context/PwaInstallContext';
 import InstallPwaModal from '@/components/common/InstallPwaModal';
 import {
   LayoutDashboard,
@@ -26,7 +27,7 @@ export default function Sidebar() {
   const pathname = usePathname();
   const { currentUser, logout } = useAuth();
   const { isOpen, closeSidebar } = useSidebar();
-  const [showInstallModal, setShowInstallModal] = useState(false);
+  const { installApp, showGuide, setShowGuide, isInstalled } = usePwa();
 
   const navItems = [
     {
@@ -165,12 +166,12 @@ export default function Sidebar() {
         {/* Install PWA Button */}
         <div className="px-3 pb-2">
           <button
-            onClick={() => setShowInstallModal(true)}
+            onClick={installApp}
             className="w-full py-2.5 px-3 rounded-xl bg-emerald-700/70 hover:bg-emerald-600/80 text-white border border-emerald-600/60 flex items-center justify-between text-xs font-semibold transition-all group shadow-xs cursor-pointer"
           >
             <div className="flex items-center gap-2">
               <Smartphone className="w-4 h-4 text-emerald-300 group-hover:scale-110 transition-transform" />
-              <span>Cài App về điện thoại</span>
+              <span>{isInstalled ? 'Đã cài đặt App' : 'Cài App vào máy'}</span>
             </div>
             <span className="px-1.5 py-0.5 rounded text-[10px] bg-emerald-500 text-white font-bold">App</span>
           </button>
@@ -208,8 +209,8 @@ export default function Sidebar() {
       </aside>
 
       <InstallPwaModal
-        isOpen={showInstallModal}
-        onClose={() => setShowInstallModal(false)}
+        isOpen={showGuide}
+        onClose={() => setShowGuide(false)}
       />
     </>
   );

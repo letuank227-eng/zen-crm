@@ -31,12 +31,13 @@ import { Task, UserNotification } from '@/types/crm';
 import { formatCurrency, formatDateTime } from '@/lib/utils';
 import DatePeriodFilter from '@/components/common/DatePeriodFilter';
 import InstallPwaModal from '@/components/common/InstallPwaModal';
+import { usePwa } from '@/context/PwaInstallContext';
 
 export default function Header() {
   const router = useRouter();
   const { currentUser, fetchWithAuth, logout, changePassword } = useAuth();
   const { toggleSidebar } = useSidebar();
-  const [showInstallModal, setShowInstallModal] = useState(false);
+  const { installApp, showGuide, setShowGuide, isInstalled } = usePwa();
   const [showCreateMenu, setShowCreateMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -216,12 +217,12 @@ export default function Header() {
 
         {/* Install Mobile App Button */}
         <button
-          onClick={() => setShowInstallModal(true)}
-          title="Tải & Cài đặt App về điện thoại"
+          onClick={installApp}
+          title="Cài đặt App ZEN CRM trực tiếp vào máy"
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-semibold transition-all shadow-xs cursor-pointer"
         >
           <Smartphone className="w-3.5 h-3.5 text-emerald-600" />
-          <span className="hidden sm:inline">Cài App</span>
+          <span className="hidden sm:inline">{isInstalled ? 'Đã cài App' : 'Cài App'}</span>
         </button>
 
         {/* Notifications Popover */}
@@ -594,8 +595,8 @@ export default function Header() {
       )}
 
       <InstallPwaModal
-        isOpen={showInstallModal}
-        onClose={() => setShowInstallModal(false)}
+        isOpen={showGuide}
+        onClose={() => setShowGuide(false)}
       />
     </header>
   );

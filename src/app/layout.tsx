@@ -3,6 +3,7 @@ import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
 import { DateFilterProvider } from '@/context/DateFilterContext';
 import { SidebarProvider } from '@/context/SidebarContext';
+import { PwaProvider } from '@/context/PwaInstallContext';
 import AppShell from '@/components/layout/AppShell';
 
 export const metadata: Metadata = {
@@ -50,13 +51,15 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased min-h-screen flex flex-col bg-slate-50 text-slate-900 selection:bg-emerald-100 selection:text-emerald-900">
-        <AuthProvider>
-          <DateFilterProvider>
-            <SidebarProvider>
-              <AppShell>{children}</AppShell>
-            </SidebarProvider>
-          </DateFilterProvider>
-        </AuthProvider>
+        <PwaProvider>
+          <AuthProvider>
+            <DateFilterProvider>
+              <SidebarProvider>
+                <AppShell>{children}</AppShell>
+              </SidebarProvider>
+            </DateFilterProvider>
+          </AuthProvider>
+        </PwaProvider>
       </body>
     </html>
   );

@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import { usePwa } from '@/context/PwaInstallContext';
+import InstallPwaModal from '@/components/common/InstallPwaModal';
 import {
   Lock,
   Mail,
@@ -13,11 +15,14 @@ import {
   AlertCircle,
   Sparkles,
   ArrowRight,
+  Smartphone,
+  Download,
 } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
+  const { installApp, showGuide, setShowGuide, isInstalled } = usePwa();
 
   // Login form state - all fields initially empty
   const [loginIdentifier, setLoginIdentifier] = useState('');
@@ -182,6 +187,18 @@ export default function LoginPage() {
               )}
             </button>
           </form>
+
+          {/* Direct Install App Button on Mobile & PC */}
+          <div className="mt-5 pt-4 border-t border-slate-100">
+            <button
+              type="button"
+              onClick={installApp}
+              className="w-full py-2.5 px-4 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200/80 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs hover:shadow-xs"
+            >
+              <Smartphone className="w-4 h-4 text-emerald-600" />
+              <span>{isInstalled ? '✓ Ứng Dụng Đã Cài Đặt Trên Máy' : 'Cài Đặt App Vào Điện Thoại (1 Chạm)'}</span>
+            </button>
+          </div>
         </div>
 
         {/* Footer info */}
@@ -189,6 +206,11 @@ export default function LoginPage() {
           ZEN CRM Cloud &copy; 2026. Chuẩn bảo mật phân quyền Role-Based Access Control (RBAC).
         </div>
       </div>
+
+      <InstallPwaModal
+        isOpen={showGuide}
+        onClose={() => setShowGuide(false)}
+      />
     </div>
   );
 }
