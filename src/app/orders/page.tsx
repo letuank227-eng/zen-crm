@@ -103,9 +103,15 @@ export default function OrdersPage() {
   useEffect(() => {
     if (currentUser) {
       fetchOrders();
-      fetchMetadata();
     }
   }, [currentUser, statusFilter, hasDebtFilter, dateFrom, dateTo]);
+
+  // Chỉ tải metadata danh mục khi mở modal tạo mới đơn hàng
+  useEffect(() => {
+    if (currentUser && showCreateModal) {
+      fetchMetadata();
+    }
+  }, [currentUser, showCreateModal]);
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 

@@ -84,13 +84,12 @@ export default function Header() {
 
   useEffect(() => {
     if (!currentUser) return;
-    fetchAlerts();
-    fetchNotifications();
+    Promise.all([fetchAlerts(), fetchNotifications()]);
 
-    // Polling định kỳ mỗi 15s để nhận thông báo thời gian thực về máy của Sale
+    // Polling định kỳ mỗi 45s để tránh nghẽn mạng serverless (Web Push đã đảm nhiệm báo tức thì)
     const timer = setInterval(() => {
       fetchNotifications();
-    }, 15000);
+    }, 45000);
 
     return () => clearInterval(timer);
   }, [currentUser]);

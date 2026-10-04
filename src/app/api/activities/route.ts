@@ -8,18 +8,16 @@ export async function GET(request: NextRequest) {
   const user = await getCurrentUser(userId);
   const db = await readDb();
 
-  // Auto update overdue tasks
+  // Dynamically resolve overdue status for display without blocking DB write
   const nowTime = Date.now();
-  let modified = false;
-  db.tasks.forEach(t => {
+  const tasksWithDynamicStatus = db.tasks.map(t => {
     if (t.status === 'PENDING' && new Date(t.dueDate).getTime() < nowTime) {
-      t.status = 'OVERDUE';
-      modified = true;
+      return { ...t, status: 'OVERDUE' as TaskStatus };
     }
+    return t;
   });
-  if (modified) await writeDb(db);
 
-  let tasks = filterTasksByRole(db.tasks, user, db);
+  let tasks = filterTasksByRole(tasksWithDynamicStatus, user, db);
 
   const searchParams = request.nextUrl.searchParams;
   const status = searchParams.get('status');

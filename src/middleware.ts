@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { SESSION_COOKIE, verifySessionToken } from '@/lib/session';
 
 // API routes reachable without a session.
-const PUBLIC_API = new Set(['/api/auth/login', '/api/auth/logout', '/api/auth/current']);
+const PUBLIC_API = new Set(['/api/auth/login', '/api/auth/logout', '/api/auth/current', '/api/push/public-key']);
 
 /**
  * Authenticates every API request from the signed session cookie and injects the

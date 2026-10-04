@@ -129,13 +129,41 @@ function fillDefaults(raw: Record<string, unknown>): CrmDatabase {
 // Postgres implementation
 // ---------------------------------------------------------------------------
 
+// In-memory cache for fast burst queries (e.g. concurrent API calls on page load)
+interface MemoryCache {
+  db: CrmDatabase;
+  snap: Snapshot;
+  expiresAt: number;
+}
+let memoryCache: MemoryCache | null = null;
+const BURST_CACHE_TTL_MS = 2500;
+
 async function pgRead(): Promise<CrmDatabase> {
-  await ensureSchema();
-  const rows = (await sql()`SELECT name, data, version FROM crm_collections`) as {
+  const now = Date.now();
+  if (memoryCache && now < memoryCache.expiresAt) {
+    const cloned = JSON.parse(JSON.stringify(memoryCache.db));
+    snapshots.set(cloned, memoryCache.snap);
+    return cloned;
+  }
+
+  let rows: {
     name: string;
     data: unknown;
     version: number;
   }[];
+
+  try {
+    rows = (await sql()`SELECT name, data, version FROM crm_collections`) as any;
+  } catch (err: any) {
+    // Only initialize schema if the table does not exist
+    if (err?.code === '42P01' || String(err?.message || '').includes('does not exist')) {
+      await ensureSchema();
+      rows = (await sql()`SELECT name, data, version FROM crm_collections`) as any;
+    } else {
+      throw err;
+    }
+  }
+
   const raw: Record<string, unknown> = {};
   const snap: Snapshot = { versions: {}, json: {} };
   for (const r of rows) {
@@ -145,10 +173,18 @@ async function pgRead(): Promise<CrmDatabase> {
   const db = fillDefaults(raw);
   for (const [k, v] of Object.entries(db)) snap.json[k] = JSON.stringify(v);
   snapshots.set(db, snap);
+
+  memoryCache = {
+    db,
+    snap,
+    expiresAt: now + BURST_CACHE_TTL_MS,
+  };
+
   return db;
 }
 
 async function pgWrite(db: CrmDatabase): Promise<void> {
+  memoryCache = null; // Invalidate cache immediately on write
   const snap = snapshots.get(db);
   const changed: { name: string; json: string; version: number | undefined }[] = [];
   for (const [name, value] of Object.entries(db)) {
