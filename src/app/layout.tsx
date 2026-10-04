@@ -23,11 +23,30 @@ export default function RootLayout({
   return (
     <html lang="vi">
       <head>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#065f46" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="ZEN CRM" />
+        <link rel="apple-touch-icon" href="/logo.png" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
           href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap"
           rel="stylesheet"
+        />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js').catch(function(err) {
+                    console.log('SW registration failed: ', err);
+                  });
+                });
+              }
+            `,
+          }}
         />
       </head>
       <body className="antialiased min-h-screen flex flex-col bg-slate-50 text-slate-900 selection:bg-emerald-100 selection:text-emerald-900">

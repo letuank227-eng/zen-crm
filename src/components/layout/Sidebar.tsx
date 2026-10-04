@@ -1,10 +1,11 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useSidebar } from '@/context/SidebarContext';
+import InstallPwaModal from '@/components/common/InstallPwaModal';
 import {
   LayoutDashboard,
   Users2,
@@ -18,12 +19,14 @@ import {
   ChevronRight,
   X,
   LogOut,
+  Smartphone,
 } from 'lucide-react';
 
 export default function Sidebar() {
   const pathname = usePathname();
   const { currentUser, logout } = useAuth();
   const { isOpen, closeSidebar } = useSidebar();
+  const [showInstallModal, setShowInstallModal] = useState(false);
 
   const navItems = [
     {
@@ -159,6 +162,20 @@ export default function Sidebar() {
           })}
         </nav>
 
+        {/* Install PWA Button */}
+        <div className="px-3 pb-2">
+          <button
+            onClick={() => setShowInstallModal(true)}
+            className="w-full py-2.5 px-3 rounded-xl bg-emerald-700/70 hover:bg-emerald-600/80 text-white border border-emerald-600/60 flex items-center justify-between text-xs font-semibold transition-all group shadow-xs cursor-pointer"
+          >
+            <div className="flex items-center gap-2">
+              <Smartphone className="w-4 h-4 text-emerald-300 group-hover:scale-110 transition-transform" />
+              <span>Cài App về điện thoại</span>
+            </div>
+            <span className="px-1.5 py-0.5 rounded text-[10px] bg-emerald-500 text-white font-bold">App</span>
+          </button>
+        </div>
+
         {/* User Status Footer */}
         <div className="p-3 border-t border-emerald-700/60 bg-emerald-900/30">
           <div className="flex items-center justify-between p-2 rounded-xl bg-emerald-900/50 border border-emerald-700/50 gap-2">
@@ -189,6 +206,11 @@ export default function Sidebar() {
           </div>
         </div>
       </aside>
+
+      <InstallPwaModal
+        isOpen={showInstallModal}
+        onClose={() => setShowInstallModal(false)}
+      />
     </>
   );
 }

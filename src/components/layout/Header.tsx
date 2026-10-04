@@ -25,15 +25,18 @@ import {
   CheckCheck,
   Truck,
   ShoppingCart,
+  Smartphone,
 } from 'lucide-react';
 import { Task, UserNotification } from '@/types/crm';
 import { formatCurrency, formatDateTime } from '@/lib/utils';
 import DatePeriodFilter from '@/components/common/DatePeriodFilter';
+import InstallPwaModal from '@/components/common/InstallPwaModal';
 
 export default function Header() {
   const router = useRouter();
   const { currentUser, fetchWithAuth, logout, changePassword } = useAuth();
   const { toggleSidebar } = useSidebar();
+  const [showInstallModal, setShowInstallModal] = useState(false);
   const [showCreateMenu, setShowCreateMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -210,6 +213,16 @@ export default function Header() {
             </div>
           )}
         </div>
+
+        {/* Install Mobile App Button */}
+        <button
+          onClick={() => setShowInstallModal(true)}
+          title="Tải & Cài đặt App về điện thoại"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-semibold transition-all shadow-xs cursor-pointer"
+        >
+          <Smartphone className="w-3.5 h-3.5 text-emerald-600" />
+          <span className="hidden sm:inline">Cài App</span>
+        </button>
 
         {/* Notifications Popover */}
         <div className="relative">
@@ -579,6 +592,11 @@ export default function Header() {
           </div>
         </div>
       )}
+
+      <InstallPwaModal
+        isOpen={showInstallModal}
+        onClose={() => setShowInstallModal(false)}
+      />
     </header>
   );
 }
