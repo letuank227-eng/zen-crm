@@ -68,8 +68,8 @@ export async function POST(request: NextRequest) {
   const userId = request.headers.get('x-user-id') || undefined;
   const user = await getCurrentUser(userId);
 
-  if (user.role !== 'ADMIN' && user.role !== 'LEADER') {
-    return NextResponse.json({ error: 'Chỉ Quản trị viên hoặc Trưởng nhóm mới có quyền tạo sản phẩm' }, { status: 403 });
+  if (user.role !== 'ADMIN') {
+    return NextResponse.json({ error: 'Chỉ Giám đốc (Admin) mới có quyền tạo sản phẩm' }, { status: 403 });
   }
 
   const db = await readDb();
@@ -122,8 +122,8 @@ export async function PUT(request: NextRequest) {
   const userId = request.headers.get('x-user-id') || undefined;
   const user = await getCurrentUser(userId);
 
-  if (user.role !== 'ADMIN' && user.role !== 'LEADER') {
-    return NextResponse.json({ error: 'Chỉ Admin hoặc Trưởng nhóm mới có quyền cập nhật bảng giá và sản phẩm' }, { status: 403 });
+  if (user.role !== 'ADMIN') {
+    return NextResponse.json({ error: 'Chỉ Giám đốc (Admin) mới có quyền cập nhật bảng giá và sản phẩm' }, { status: 403 });
   }
 
   const db = await readDb();
@@ -176,7 +176,7 @@ export async function DELETE(request: NextRequest) {
   const user = await getCurrentUser(userId);
 
   if (user.role !== 'ADMIN') {
-    return NextResponse.json({ error: 'Chỉ Admin mới có quyền xóa sản phẩm khỏi danh mục' }, { status: 403 });
+    return NextResponse.json({ error: 'Chỉ Giám đốc (Admin) mới có quyền xóa sản phẩm khỏi danh mục' }, { status: 403 });
   }
 
   const searchParams = request.nextUrl.searchParams;

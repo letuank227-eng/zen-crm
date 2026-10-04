@@ -41,7 +41,7 @@ export default function ProductsPage() {
   const [notes, setNotes] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
-  const isAdminOrLeader = currentUser?.role === 'ADMIN' || currentUser?.role === 'LEADER';
+  const isDirector = currentUser?.role === 'ADMIN';
 
   const modalFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -85,6 +85,7 @@ export default function ProductsPage() {
   };
 
   const handleOpenAdd = () => {
+    if (!isDirector) return;
     setEditingProd(null);
     setName('');
     setPrice(85000);
@@ -97,6 +98,7 @@ export default function ProductsPage() {
   };
 
   const handleOpenEdit = (p: Product) => {
+    if (!isDirector) return;
     const prodPrice = p.price ?? p.retailPrice ?? 85000;
     const prodRate = p.commissionRate !== undefined ? p.commissionRate : 10;
     const prodAmount = p.commissionAmount !== undefined ? p.commissionAmount : Math.round((prodPrice * prodRate) / 100);
@@ -114,6 +116,10 @@ export default function ProductsPage() {
 
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isDirector) {
+      setErrorMsg('Chỉ Giám đốc mới có quyền thêm hoặc chỉnh sửa sản phẩm');
+      return;
+    }
     if (!name.trim() || !price) {
       setErrorMsg('Vui lòng điền đầy đủ Tên sản phẩm và Giá bán');
       return;
@@ -172,6 +178,10 @@ export default function ProductsPage() {
 
 
   const handleDeleteProduct = async (p: Product) => {
+    if (!isDirector) {
+      alert('Chỉ Giám đốc mới có quyền xóa sản phẩm khỏi danh mục');
+      return;
+    }
     if (!confirm(`Bạn có chắc chắn muốn xóa "${p.name}" khỏi danh mục không?`)) return;
 
     try {
@@ -208,13 +218,18 @@ export default function ProductsPage() {
             <Package className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-600 flex-shrink-0" />
             <span>Danh Mục Sản Phẩm</span>
           </h1>
+          <p className="text-slate-500 text-[11px] mt-0.5">
+            {isDirector
+              ? '👑 Quyền Giám đốc: Toàn quyền thêm, sửa bảng giá và hoa hồng sản phẩm'
+              : 'Bảng giá niêm yết và hoa hồng thực nhận cho nhân sự'}
+          </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          {(currentUser?.role === 'ADMIN' || currentUser?.role === 'LEADER') && (
+          {isDirector && (
             <button
               onClick={handleOpenAdd}
-              className="px-3.5 sm:px-4 py-1.5 sm:py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold flex items-center gap-1.5 shadow-sm transition-colors"
+              className="px-3.5 sm:px-4 py-1.5 sm:py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               <span>+ Thêm Sản Phẩm</span>
@@ -262,18 +277,34 @@ export default function ProductsPage() {
             <div
               key={p.id}
               onClick={() => {
-                if (isAdminOrLeader) {
+                if (isDirector) {
                   handleOpenEdit(p);
                 }
               }}
               className={`bg-white rounded-2xl border border-slate-200 shadow-xs hover:shadow-lg transition-all duration-300 overflow-hidden flex flex-col justify-between group pb-4 ${
-                isAdminOrLeader ? 'cursor-pointer hover:border-emerald-500 hover:ring-2 hover:ring-emerald-500/20' : ''
+                isDirector ? 'cursor-pointer hover:border-emerald-500 hover:ring-2 hover:ring-emerald-500/20' : ''
               }`}
-              title={isAdminOrLeader ? 'Nhấn để chỉnh sửa hoặc xóa sản phẩm này' : undefined}
+              title={isDirector ? 'Nhấn để chỉnh sửa hoặc xóa sản phẩm này' : undefined}
             >
               <div className="space-y-3.5">
                 {/* [ 1. ẢNH SẢN PHẨM - UPLOAD ] */}
                 <div className="relative aspect-[16/10] w-full bg-slate-900 overflow-hidden group/img flex items-center justify-center">
+                  {/* Nút Chỉnh sửa chỉ dành cho Giám đốc */}
+                  {isDirector && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenEdit(p);
+                      }}
+                      className="absolute top-2.5 left-2.5 z-10 bg-slate-900/85 hover:bg-emerald-600 text-white backdrop-blur-xs px-2.5 py-1 rounded-full text-[11px] font-semibold flex items-center gap-1.5 shadow-md transition-all cursor-pointer border border-white/20"
+                      title="Chỉnh sửa thông tin sản phẩm"
+                    >
+                      <Edit2 className="w-3 h-3 text-emerald-300" />
+                      <span>Sửa</span>
+                    </button>
+                  )}
+
                   {/* Badge góc nhỏ hoa hồng Sale */}
                   {commAmount > 0 && (
                     <div className="absolute top-2.5 right-2.5 z-10 bg-slate-900/90 backdrop-blur-xs text-white border border-emerald-400/40 px-2.5 py-1 rounded-full shadow-lg flex items-center gap-1 text-[11px] font-bold pointer-events-none">
@@ -351,12 +382,14 @@ export default function ProductsPage() {
           <div className="col-span-3 text-center py-16 bg-white rounded-2xl border border-slate-200 shadow-xs space-y-3">
             <Package className="w-10 h-10 mx-auto text-slate-300" />
             <div className="text-slate-500 font-medium">Không tìm thấy sản phẩm cây thủy sinh nào phù hợp.</div>
-            <button
-              onClick={handleOpenAdd}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold shadow-xs"
-            >
-              + Thêm Sản Phẩm Mới
-            </button>
+            {isDirector && (
+              <button
+                onClick={handleOpenAdd}
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold shadow-xs cursor-pointer"
+              >
+                + Thêm Sản Phẩm Mới
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -546,7 +579,7 @@ export default function ProductsPage() {
               </div>
 
               <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-                {editingProd && isAdminOrLeader ? (
+                {editingProd && isDirector ? (
                   <button
                     type="button"
                     onClick={() => {
