@@ -500,7 +500,7 @@ export default function TeamPage() {
         <div className="fixed inset-0 z-60 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 border border-slate-200 text-xs animate-in zoom-in-95">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <span className="font-bold text-sm text-slate-800">Đặt Chỉ Tiêu KPI: {editingUser.name}</span>
+              <span className="font-bold text-sm text-slate-800">Cập Nhật Nhân Sự & KPI: {editingUser.name}</span>
               <button onClick={() => setEditingUser(null)} className="p-1 rounded text-slate-400 hover:text-slate-600">
                 <X className="w-4 h-4" />
               </button>
@@ -556,6 +556,9 @@ export default function TeamPage() {
                     placeholder="Nhập mật khẩu mới (tối thiểu 6 ký tự)"
                     className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none font-mono text-xs"
                   />
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    Để trống nếu giữ nguyên. Nếu nhập mật khẩu mới, nhân viên sẽ dùng mật khẩu này để đăng nhập ngay lập tức.
+                  </p>
                 </div>
               )}
 
@@ -571,7 +574,7 @@ export default function TeamPage() {
                   type="submit"
                   className="px-4 py-1.5 bg-emerald-600 text-white rounded-lg font-semibold"
                 >
-                  Lưu Chỉ Tiêu
+                  Lưu Thông Tin
                 </button>
               </div>
             </form>
@@ -698,6 +701,10 @@ export default function TeamPage() {
                   className="w-full p-2 bg-white border border-amber-300/80 rounded-lg outline-none font-mono text-xs sm:text-sm text-slate-900 font-bold tracking-wider"
                   required
                 />
+                <p className="text-[11px] text-amber-700 bg-amber-50 p-2 rounded-lg border border-amber-200 mt-1.5 flex items-center gap-1.5">
+                  <span className="flex-shrink-0">⚠️</span>
+                  <span>Mật khẩu này chỉ có hiệu lực sau khi bạn bấm nút <strong>"Tạo nhân sự"</strong> bên dưới.</span>
+                </p>
               </div>
 
               <div>
