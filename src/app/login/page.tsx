@@ -48,7 +48,9 @@ export default function LoginPage() {
     }
 
     setLoginLoading(true);
-    const result = await login(loginIdentifier.trim(), loginPassword.trim());
+    const cleanIdentifier = loginIdentifier.trim().replace(/^['"`\s]+|['"`\s]+$/g, '');
+    const cleanPass = loginPassword.trim();
+    const result = await login(cleanIdentifier, cleanPass);
     setLoginLoading(false);
 
     if (result.success) {
