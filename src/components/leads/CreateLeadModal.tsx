@@ -232,8 +232,8 @@ export default function CreateLeadModal({
   };
 
   return (
-    <div className="fixed inset-0 z-60 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4">
-      <div className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl border border-slate-200 animate-in zoom-in-95 text-xs max-h-[92dvh] sm:max-h-[90vh] flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-modal-backdrop z-60 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4" style={{ zIndex: 999 }}>
+      <div className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl border border-slate-200 animate-in zoom-in-95 text-xs max-h-[92dvh] sm:max-h-[90vh] flex flex-col overflow-hidden relative" style={{ zIndex: 1000 }}>
         {/* Header (Sticky top) */}
         <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-100 flex-shrink-0 bg-white">
           <div className="flex items-center gap-2.5">

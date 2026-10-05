@@ -120,3 +120,12 @@ body {
     display: block !important;
   }
 }
+
+/* Modal z-index overrides to guarantee modals stay above mobile bottom bar */
+.z-modal-backdrop {
+  z-index: 999 !important;
+}
+.z-modal-content {
+  z-index: 1000 !important;
+}
+
