@@ -536,9 +536,10 @@ export default function OrdersPage() {
 
       {/* MODAL: Kế Toán Thu Tiền, Đối Soát & Cập Nhật Công Nợ (Hiển thị chi tiết sản phẩm + ghi chú) */}
       {editingOrder && (
-        <div className="fixed inset-0 z-60 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl max-w-xl w-full p-5 sm:p-6 shadow-2xl space-y-4 border border-slate-200 text-xs animate-in zoom-in-95 my-auto max-h-[95vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div className="fixed inset-0 z-60 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4">
+          <div className="bg-white rounded-2xl max-w-xl w-full shadow-2xl border border-slate-200 text-xs animate-in zoom-in-95 max-h-[92dvh] sm:max-h-[90vh] flex flex-col overflow-hidden">
+            {/* Header (Sticky top) */}
+            <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-100 flex-shrink-0 bg-white">
               <div>
                 <span className="font-bold text-sm text-slate-800 flex items-center gap-1.5">
                   <Receipt className="w-4 h-4 text-emerald-600" />
@@ -562,7 +563,9 @@ export default function OrdersPage() {
               </button>
             </div>
 
-            {/* MỤC SẢN PHẨM CHI TIẾT */}
+            {/* Scrollable Body */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+              {/* MỤC SẢN PHẨM CHI TIẾT */}
             <div className="bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/90 space-y-2">
               <div className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center justify-between">
                 <span className="flex items-center gap-1.5">
@@ -611,7 +614,7 @@ export default function OrdersPage() {
               )}
             </div>
 
-            <form onSubmit={handleUpdatePayment} className="space-y-3.5">
+            <form id="order-update-form" onSubmit={handleUpdatePayment} className="space-y-3.5">
               {/* Bảng phân tích tài chính của đơn */}
               <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 space-y-2">
                 <div className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
@@ -723,40 +726,42 @@ export default function OrdersPage() {
                   </div>
                 )}
               </div>
-
-              {/* Buttons */}
-              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setEditingOrder(null)}
-                  className="px-3.5 py-1.5 bg-slate-100 text-slate-700 rounded-xl font-medium hover:bg-slate-200 transition-colors"
-                >
-                  Đóng
-                </button>
-                {isDirector ? (
-                  <button
-                    type="submit"
-                    disabled={isUpdating}
-                    className="px-5 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl font-bold shadow-sm transition-colors text-xs cursor-pointer"
-                  >
-                    {isUpdating ? 'Đang lưu...' : 'Lưu Thay Đổi'}
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    disabled
-                    className="px-3.5 py-1.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-xl font-medium text-xs cursor-not-allowed flex items-center gap-1.5"
-                    title="Chỉ Giám đốc mới có quyền chỉnh sửa đơn hàng"
-                  >
-                    <Lock className="w-3.5 h-3.5" />
-                    <span>Chỉ Giám đốc được sửa</span>
-                  </button>
-                )}
-              </div>
             </form>
           </div>
+
+          {/* Sticky Footer */}
+          <div className="flex-shrink-0 p-3 sm:p-4 bg-slate-50/90 sm:bg-white border-t border-slate-200 flex justify-end gap-2.5">
+            <button
+              type="button"
+              onClick={() => setEditingOrder(null)}
+              className="px-4 py-2 bg-slate-200/80 hover:bg-slate-300 text-slate-700 rounded-xl font-medium transition-colors text-xs"
+            >
+              Đóng
+            </button>
+            {isDirector ? (
+              <button
+                type="submit"
+                form="order-update-form"
+                disabled={isUpdating}
+                className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl font-bold shadow-sm transition-colors text-xs cursor-pointer"
+              >
+                {isUpdating ? 'Đang lưu...' : 'Lưu Thay Đổi'}
+              </button>
+            ) : (
+              <button
+                type="button"
+                disabled
+                className="px-4 py-2 bg-slate-100 text-slate-400 border border-slate-200 rounded-xl font-medium text-xs cursor-not-allowed flex items-center gap-1.5"
+                title="Chỉ Giám đốc mới có quyền chỉnh sửa đơn hàng"
+              >
+                <Lock className="w-3.5 h-3.5" />
+                <span>Chỉ Giám đốc được sửa</span>
+              </button>
+            )}
+          </div>
         </div>
-      )}
+      </div>
+    )}
 
       {/* MODAL: Tạo Đơn Hàng & Lead Mới Ngay Tại Phân Hệ Đơn Hàng */}
       {showCreateModal && (
