@@ -61,11 +61,9 @@ export default function CreateLeadModal({
   const [customSource, setCustomSource] = useState('');
   const [status, setStatus] = useState('CONSULTING');
 
-  // 3. Phân công Sale
-  const [assignedSaleId, setAssignedSaleId] = useState(
-    currentUser?.role === 'SALE' ? currentUser.id : ''
-  );
-  const [autoRoundRobin, setAutoRoundRobin] = useState(currentUser?.role !== 'SALE');
+  // 3. Phân công Sale (Mặc định chính người đang tạo đơn dù là Sale, Leader, Admin hay Giám đốc)
+  const [assignedSaleId, setAssignedSaleId] = useState(currentUser?.id || '');
+  const [autoRoundRobin, setAutoRoundRobin] = useState(false);
 
   // 4. Sản phẩm khách mua
   const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
@@ -375,36 +373,31 @@ export default function CreateLeadModal({
                 </div>
 
                 <div className="mt-2">
-                  <span className="font-semibold text-slate-700 block mb-1">Phân công Sale phụ trách:</span>
+                  <span className="font-semibold text-slate-700 block mb-1">Người phụ trách đơn &amp; khách hàng:</span>
                   {currentUser?.role === 'SALE' ? (
-                    <div className="p-1.5 bg-emerald-50 text-emerald-800 rounded border border-emerald-200 font-semibold">
-                      {currentUser.name} (Chính bạn)
+                    <div className="p-2 bg-emerald-50 text-emerald-800 rounded-lg border border-emerald-200 font-semibold text-xs flex items-center justify-between">
+                      <span>{currentUser.name} (Chính bạn)</span>
+                      <span className="text-[10px] bg-emerald-200/80 text-emerald-900 px-1.5 py-0.5 rounded font-mono">Người tạo đơn</span>
                     </div>
                   ) : (
-                    <div className="space-y-1">
-                      <label className="flex items-center gap-1.5 font-medium text-slate-700 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={autoRoundRobin}
-                          onChange={e => setAutoRoundRobin(e.target.checked)}
-                          className="rounded text-emerald-600"
-                        />
-                        <span>Tự động chia đều (Round-robin)</span>
-                      </label>
-                      {!autoRoundRobin && (
-                        <select
-                          value={assignedSaleId}
-                          onChange={e => setAssignedSaleId(e.target.value)}
-                          className="w-full p-1.5 bg-white border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-emerald-500 text-xs"
-                        >
-                          <option value="">-- Chọn Sale phụ trách --</option>
-                          {sales.map(s => (
-                            <option key={s.id} value={s.id}>
-                              {s.name}
-                            </option>
-                          ))}
-                        </select>
-                      )}
+                    <div>
+                      <select
+                        value={assignedSaleId}
+                        onChange={e => setAssignedSaleId(e.target.value)}
+                        className="w-full p-2 bg-white border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-emerald-500 text-xs font-medium text-slate-800"
+                      >
+                        <option value={currentUser?.id || ''}>
+                          {currentUser?.name} (Chính bạn - Mặc định)
+                        </option>
+                        {sales.filter(s => s.id !== currentUser?.id).map(s => (
+                          <option key={s.id} value={s.id}>
+                            {s.name} ({s.role || 'SALE'})
+                          </option>
+                        ))}
+                      </select>
+                      <span className="text-[10px] text-slate-500 mt-1 block">
+                        Đơn hàng sẽ ghi nhận doanh số và KPI cho người được chọn ở trên.
+                      </span>
                     </div>
                   )}
                 </div>

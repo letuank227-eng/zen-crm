@@ -131,19 +131,20 @@ export async function POST(request: NextRequest) {
   let finalSaleId = assignedSaleId;
   let finalSaleName: string | undefined = undefined;
 
-  if (autoRoundRobin && !finalSaleId) {
-    const roundRobinSale = getNextRoundRobinSale(db, user.role === 'LEADER' ? leaderTeamId : undefined);
-    if (roundRobinSale) {
-      finalSaleId = roundRobinSale.id;
-      finalSaleName = roundRobinSale.name;
-    }
-  } else if (finalSaleId) {
+  if (finalSaleId) {
     const saleUser = db.users.find(u => u.id === finalSaleId);
     if (user.role === 'LEADER' && saleUser && saleUser.teamId !== leaderTeamId && saleUser.id !== user.id) {
       return NextResponse.json({ error: 'Quản lý chỉ được phân công khách hàng cho nhân viên trong đội nhóm của mình' }, { status: 403 });
     }
     finalSaleName = saleUser?.name;
-  } else if (user.role === 'SALE') {
+  } else if (autoRoundRobin) {
+    const roundRobinSale = getNextRoundRobinSale(db, user.role === 'LEADER' ? leaderTeamId : undefined);
+    if (roundRobinSale) {
+      finalSaleId = roundRobinSale.id;
+      finalSaleName = roundRobinSale.name;
+    }
+  } else {
+    // Đơn hàng của ai tạo thì mặc định ghi nhận 100% cho chính người đó (dù là SALE, LEADER, ADMIN hay Giám đốc)
     finalSaleId = user.id;
     finalSaleName = user.name;
   }
