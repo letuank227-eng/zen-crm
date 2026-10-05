@@ -52,7 +52,7 @@ export default function MobileBottomNav() {
   );
 
   return (
-    <nav className="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-slate-200 z-40 lg:hidden shadow-[0_-4px_12px_rgba(0,0,0,0.05)] safe-area-pb">
+    <nav className="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-slate-200 z-40 lg:hidden shadow-[0_-4px_12px_rgba(0,0,0,0.05)] safe-area-pb" style={{ zIndex: 40 }}>
       <div className="grid grid-cols-5 h-14 items-center">
         {visibleItems.map(item => {
           const Icon = item.icon;
