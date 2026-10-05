@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { readDb, writeDb, getCurrentUser, logAuditEvent } from '@/lib/db';
 import { generateId } from '@/lib/utils';
-import { Product } from '@/types/crm';
+import { Product, AuditLog } from '@/types/crm';
 
 export async function GET(request: NextRequest) {
   const db = await readDb();
@@ -104,16 +104,18 @@ export async function POST(request: NextRequest) {
   };
 
   db.products.push(newProduct);
+  const auditLog: AuditLog = {
+    id: generateId('aud'),
+    userId: user.id,
+    userName: user.name,
+    action: 'CREATE',
+    entityType: 'SETTINGS',
+    entityId: newProduct.id,
+    details: `Thêm mới sản phẩm cây thủy sinh: ${newProduct.name} - Giá: ${newProduct.price}`,
+    createdAt: new Date().toISOString(),
+  };
+  db.auditLogs.unshift(auditLog);
   await writeDb(db);
-
-  await logAuditEvent(
-    user.id,
-    user.name,
-    'CREATE',
-    'SETTINGS',
-    newProduct.id,
-    `Thêm mới sản phẩm cây thủy sinh: ${newProduct.name} - Giá: ${newProduct.price}`
-  );
 
   return NextResponse.json({ product: newProduct }, { status: 201 });
 }
@@ -157,16 +159,18 @@ export async function PUT(request: NextRequest) {
       : {}),
   };
 
+  const auditLog: AuditLog = {
+    id: generateId('aud'),
+    userId: user.id,
+    userName: user.name,
+    action: 'UPDATE',
+    entityType: 'SETTINGS',
+    entityId: id,
+    details: `Cập nhật sản phẩm: ${db.products[pIndex].name}`,
+    createdAt: new Date().toISOString(),
+  };
+  db.auditLogs.unshift(auditLog);
   await writeDb(db);
-
-  await logAuditEvent(
-    user.id,
-    user.name,
-    'UPDATE',
-    'SETTINGS',
-    id,
-    `Cập nhật sản phẩm: ${db.products[pIndex].name}`
-  );
 
   return NextResponse.json({ product: db.products[pIndex] });
 }
@@ -190,16 +194,19 @@ export async function DELETE(request: NextRequest) {
 
   const deletedProd = db.products[pIndex];
   db.products.splice(pIndex, 1);
-  await writeDb(db);
 
-  await logAuditEvent(
-    user.id,
-    user.name,
-    'DELETE',
-    'SETTINGS',
-    id || '',
-    `Xóa sản phẩm cây thủy sinh: ${deletedProd.name} (${deletedProd.sku})`
-  );
+  const auditLog: AuditLog = {
+    id: generateId('aud'),
+    userId: user.id,
+    userName: user.name,
+    action: 'DELETE',
+    entityType: 'SETTINGS',
+    entityId: id || '',
+    details: `Xóa sản phẩm cây thủy sinh: ${deletedProd.name} (${deletedProd.sku})`,
+    createdAt: new Date().toISOString(),
+  };
+  db.auditLogs.unshift(auditLog);
+  await writeDb(db);
 
   return NextResponse.json({ success: true, message: 'Đã xóa sản phẩm thành công' });
 }

@@ -66,10 +66,8 @@ export default function ProductsPage() {
   };
 
   useEffect(() => {
-    if (currentUser) {
-      fetchProducts();
-    }
-  }, [currentUser, dateFrom, dateTo]);
+    fetchProducts();
+  }, [dateFrom, dateTo]);
 
   // Handle local image file upload in Add/Edit modal with automatic client-side compression
   const handleModalFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -130,7 +128,7 @@ export default function ProductsPage() {
     try {
       if (editingProd) {
         // PUT
-        await fetchWithAuth('/api/products', {
+        const res = await fetchWithAuth('/api/products', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -146,10 +144,16 @@ export default function ProductsPage() {
             notes,
           }),
         });
-        setNotification(`Đã cập nhật sản phẩm "${name}" thành công!`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.product) {
+            setProducts(prev => prev.map(p => (p.id === data.product.id ? data.product : p)));
+          }
+          setNotification(`Đã cập nhật sản phẩm "${name}" thành công!`);
+        }
       } else {
         // POST
-        await fetchWithAuth('/api/products', {
+        const res = await fetchWithAuth('/api/products', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -164,11 +168,16 @@ export default function ProductsPage() {
             notes,
           }),
         });
-        setNotification(`Đã thêm mới cây thủy sinh "${name}" thành công!`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.product) {
+            setProducts(prev => [data.product, ...prev]);
+          }
+          setNotification(`Đã thêm mới cây thủy sinh "${name}" thành công!`);
+        }
       }
 
       setShowProductModal(false);
-      fetchProducts();
       setTimeout(() => setNotification(''), 4000);
     } catch (err) {
       console.error('Failed to save product:', err);
@@ -184,17 +193,23 @@ export default function ProductsPage() {
     }
     if (!confirm(`Bạn có chắc chắn muốn xóa "${p.name}" khỏi danh mục không?`)) return;
 
+    // Optimistic UI update: Xóa ngay lập tức khỏi màn hình (0ms phản hồi)
+    setProducts(prev => prev.filter(prod => prod.id !== p.id));
+    setNotification(`Đã xóa sản phẩm "${p.name}".`);
+    setTimeout(() => setNotification(''), 4000);
+
     try {
       const res = await fetchWithAuth(`/api/products?id=${p.id}`, {
         method: 'DELETE',
       });
-      if (res.ok) {
-        setNotification(`Đã xóa sản phẩm "${p.name}".`);
+      if (!res.ok) {
+        // Rollback nếu server trả lỗi
         fetchProducts();
-        setTimeout(() => setNotification(''), 4000);
+        alert('Không thể xóa sản phẩm. Đang tải lại dữ liệu...');
       }
     } catch (err) {
       console.error('Failed to delete product:', err);
+      fetchProducts();
     }
   };
 

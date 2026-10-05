@@ -162,7 +162,7 @@ interface MemoryCache {
   expiresAt: number;
 }
 let memoryCache: MemoryCache | null = null;
-const BURST_CACHE_TTL_MS = 2500;
+const BURST_CACHE_TTL_MS = 12000;
 
 async function tursoRead(): Promise<CrmDatabase> {
   const now = Date.now();
