@@ -4,6 +4,7 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import * as XLSX from 'xlsx';
 import { useAuth } from '@/context/AuthContext';
+import { useDebounce } from '@/hooks/useDebounce';
 import {
   Users2,
   Search,
@@ -50,6 +51,7 @@ function LeadsContent() {
   const [filterSale, setFilterSale] = useState('ALL');
   const [filterProduct, setFilterProduct] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
+  const debouncedSearch = useDebounce(searchTerm, 350);
 
   // Modals state
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
@@ -58,7 +60,7 @@ function LeadsContent() {
   const [showCreateModal, setShowCreateModal] = useState(searchParams.get('action') === 'create');
   const [notification, setNotification] = useState('');
 
-  const fetchLeads = async () => {
+  const fetchLeads = async (searchOverride?: string) => {
     try {
       setIsLoading(true);
       const params = new URLSearchParams();
@@ -66,7 +68,8 @@ function LeadsContent() {
       if (filterSource !== 'ALL') params.set('source', filterSource);
       if (filterSale !== 'ALL') params.set('saleId', filterSale);
       if (filterProduct !== 'ALL') params.set('productId', filterProduct);
-      if (searchTerm.trim()) params.set('search', searchTerm.trim());
+      const activeSearch = searchOverride !== undefined ? searchOverride : debouncedSearch;
+      if (activeSearch.trim()) params.set('search', activeSearch.trim());
       if (dateFrom) params.set('dateFrom', dateFrom);
       if (dateTo) params.set('dateTo', dateTo);
 
@@ -90,11 +93,11 @@ function LeadsContent() {
     if (currentUser) {
       fetchLeads();
     }
-  }, [currentUser, filterStatus, filterSource, filterSale, filterProduct, dateFrom, dateTo]);
+  }, [currentUser, filterStatus, filterSource, filterSale, filterProduct, dateFrom, dateTo, debouncedSearch]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    fetchLeads();
+    fetchLeads(searchTerm);
   };
 
   const handleExportExcel = async () => {

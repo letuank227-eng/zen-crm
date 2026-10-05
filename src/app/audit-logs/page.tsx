@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useDebounce } from '@/hooks/useDebounce';
 import {
   History,
   Shield,
@@ -53,12 +54,18 @@ export default function AuditLogsPage() {
     }
   }, [currentUser, actionFilter, entityFilter, dateFrom, dateTo]);
 
-  const filteredLogs = logs.filter(
-    l =>
-      l.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      l.details.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (l.reason && l.reason.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const debouncedSearch = useDebounce(searchTerm, 250);
+
+  const filteredLogs = useMemo(() => {
+    if (!debouncedSearch.trim()) return logs;
+    const term = debouncedSearch.toLowerCase();
+    return logs.filter(
+      l =>
+        l.userName.toLowerCase().includes(term) ||
+        l.details.toLowerCase().includes(term) ||
+        (l.reason && l.reason.toLowerCase().includes(term))
+    );
+  }, [logs, debouncedSearch]);
 
   const getActionBadge = (action: AuditLog['action']) => {
     switch (action) {

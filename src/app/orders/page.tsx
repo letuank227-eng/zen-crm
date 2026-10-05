@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import * as XLSX from 'xlsx';
 import { useAuth } from '@/context/AuthContext';
+import { useDebounce } from '@/hooks/useDebounce';
 import {
   FileSpreadsheet,
   DollarSign,
@@ -217,11 +218,13 @@ export default function OrdersPage() {
     }
   };
 
-  // Filter orders by search term
-  const filteredOrders = orders.filter(o => {
-    if (!searchTerm.trim()) return true;
-    const term = searchTerm.toLowerCase();
-    return (
+  const debouncedSearch = useDebounce(searchTerm, 250);
+
+  // Filter orders by search term (memoized for optimal rendering performance)
+  const filteredOrders = useMemo(() => {
+    if (!debouncedSearch.trim()) return orders;
+    const term = debouncedSearch.toLowerCase();
+    return orders.filter(o =>
       o.code.toLowerCase().includes(term) ||
       o.customerName.toLowerCase().includes(term) ||
       (o.company && o.company.toLowerCase().includes(term)) ||
@@ -229,7 +232,7 @@ export default function OrdersPage() {
       (o.assignedSaleName && o.assignedSaleName.toLowerCase().includes(term)) ||
       (o.notes && o.notes.toLowerCase().includes(term))
     );
-  });
+  }, [orders, debouncedSearch]);
 
   return (
     <div className="space-y-6">

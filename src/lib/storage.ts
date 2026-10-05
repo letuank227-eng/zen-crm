@@ -1,16 +1,16 @@
 /**
  * Persistence layer for the CRM document.
  *
- * - When DATABASE_URL is set: Postgres (Neon serverless HTTP driver). Each top-level
- *   collection of CrmDatabase is stored as one JSONB row with a version number.
- *   Writes only touch collections that changed and use optimistic locking, so two
- *   users editing different collections never overwrite each other, and conflicting
- *   edits on the same collection are rejected instead of silently lost.
- * - Otherwise: local JSON file in ./data (development only).
+ * - When TURSO_DATABASE_URL is set: Turso Database (libSQL). Each top-level
+ *   collection of CrmDatabase is stored as one JSON string row with a version number.
+ *   Writes only touch collections that changed and use optimistic locking inside
+ *   libSQL transactions, so two users editing different collections never overwrite
+ *   each other, and conflicting edits on the same collection are rejected.
+ * - Otherwise: local JSON file in ./data (development fallback).
  */
 import fs from 'fs';
 import path from 'path';
-import { neon, NeonQueryFunction } from '@neondatabase/serverless';
+import { createClient, Client } from '@libsql/client';
 import { CrmDatabase } from '@/types/crm';
 import { getInitialSeedData } from './seed';
 
@@ -29,28 +29,45 @@ interface Snapshot {
 // Remembers what each loaded db object looked like, to diff on write.
 const snapshots = new WeakMap<object, Snapshot>();
 
-let sqlClient: NeonQueryFunction<false, false> | null = null;
-function sql() {
-  if (!sqlClient) sqlClient = neon(process.env.DATABASE_URL as string);
-  return sqlClient;
+let clientInstance: Client | null = null;
+function getClient(): Client {
+  if (!clientInstance) {
+    const url = process.env.TURSO_DATABASE_URL || process.env.DATABASE_URL;
+    if (!url) throw new Error('TURSO_DATABASE_URL is not set');
+    const authToken = process.env.TURSO_AUTH_TOKEN;
+    clientInstance = createClient({
+      url,
+      authToken,
+    });
+  }
+  return clientInstance;
 }
 
+export function usingTurso(): boolean {
+  return !!(process.env.TURSO_DATABASE_URL || (process.env.DATABASE_URL && (process.env.DATABASE_URL.startsWith('libsql:') || process.env.DATABASE_URL.startsWith('http'))));
+}
+
+// Backward compatibility alias
 export function usingPostgres(): boolean {
-  return !!process.env.DATABASE_URL;
+  return usingTurso();
 }
 
 let schemaReady: Promise<void> | null = null;
 async function ensureSchema(): Promise<void> {
   if (!schemaReady) {
     schemaReady = (async () => {
-      await sql()`CREATE TABLE IF NOT EXISTS crm_collections (
-        name TEXT PRIMARY KEY,
-        data JSONB NOT NULL,
-        version INTEGER NOT NULL DEFAULT 1,
-        updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
-      )`;
-      const rows = (await sql()`SELECT count(*)::int AS n FROM crm_collections`) as { n: number }[];
-      if (rows[0].n === 0) {
+      const client = getClient();
+      await client.execute(`
+        CREATE TABLE IF NOT EXISTS crm_collections (
+          name TEXT PRIMARY KEY,
+          data TEXT NOT NULL,
+          version INTEGER NOT NULL DEFAULT 1,
+          updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+      `);
+      const res = await client.execute('SELECT count(*) AS n FROM crm_collections');
+      const count = Number(res.rows[0]?.n ?? 0);
+      if (count === 0) {
         await seedCollections(await buildInitialData());
       }
     })().catch(err => {
@@ -84,33 +101,42 @@ async function buildInitialData(): Promise<CrmDatabase> {
 }
 
 export async function seedCollections(data: CrmDatabase): Promise<void> {
-  const queries = Object.entries(data).map(
-    ([name, value]) =>
-      sql()`INSERT INTO crm_collections (name, data) VALUES (${name}, ${JSON.stringify(value)}::jsonb)
-            ON CONFLICT (name) DO NOTHING`
-  );
-  await sql().transaction(queries);
+  const client = getClient();
+  const stmts = Object.entries(data).map(([name, value]) => ({
+    sql: `INSERT INTO crm_collections (name, data, version, updated_at) 
+          VALUES (?, ?, 1, datetime('now'))
+          ON CONFLICT (name) DO NOTHING`,
+    args: [name, JSON.stringify(value)],
+  }));
+  await client.batch(stmts, 'write');
 }
 
-/** Overwrites every collection (used by the migration script / restore). */
+/** Overwrites every collection (used by migration / restore). */
 export async function replaceAllCollections(data: CrmDatabase): Promise<void> {
   await ensureSchemaTableOnly();
-  const queries = Object.entries(data).map(
-    ([name, value]) =>
-      sql()`INSERT INTO crm_collections (name, data) VALUES (${name}, ${JSON.stringify(value)}::jsonb)
-            ON CONFLICT (name) DO UPDATE SET data = EXCLUDED.data,
-              version = crm_collections.version + 1, updated_at = now()`
-  );
-  await sql().transaction(queries);
+  const client = getClient();
+  const stmts = Object.entries(data).map(([name, value]) => ({
+    sql: `INSERT INTO crm_collections (name, data, version, updated_at)
+          VALUES (?, ?, 1, datetime('now'))
+          ON CONFLICT (name) DO UPDATE SET
+            data = excluded.data,
+            version = crm_collections.version + 1,
+            updated_at = datetime('now')`,
+    args: [name, JSON.stringify(value)],
+  }));
+  await client.batch(stmts, 'write');
 }
 
 async function ensureSchemaTableOnly(): Promise<void> {
-  await sql()`CREATE TABLE IF NOT EXISTS crm_collections (
-    name TEXT PRIMARY KEY,
-    data JSONB NOT NULL,
-    version INTEGER NOT NULL DEFAULT 1,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
-  )`;
+  const client = getClient();
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS crm_collections (
+      name TEXT PRIMARY KEY,
+      data TEXT NOT NULL,
+      version INTEGER NOT NULL DEFAULT 1,
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
 }
 
 function fillDefaults(raw: Record<string, unknown>): CrmDatabase {
@@ -126,7 +152,7 @@ function fillDefaults(raw: Record<string, unknown>): CrmDatabase {
 }
 
 // ---------------------------------------------------------------------------
-// Postgres implementation
+// Turso (libSQL) implementation
 // ---------------------------------------------------------------------------
 
 // In-memory cache for fast burst queries (e.g. concurrent API calls on page load)
@@ -138,27 +164,30 @@ interface MemoryCache {
 let memoryCache: MemoryCache | null = null;
 const BURST_CACHE_TTL_MS = 2500;
 
-async function pgRead(): Promise<CrmDatabase> {
+async function tursoRead(): Promise<CrmDatabase> {
   const now = Date.now();
   if (memoryCache && now < memoryCache.expiresAt) {
     const cloned = JSON.parse(JSON.stringify(memoryCache.db));
-    snapshots.set(cloned, memoryCache.snap);
+    const isolatedSnap: Snapshot = {
+      versions: { ...memoryCache.snap.versions },
+      json: { ...memoryCache.snap.json },
+    };
+    snapshots.set(cloned, isolatedSnap);
     return cloned;
   }
 
-  let rows: {
-    name: string;
-    data: unknown;
-    version: number;
-  }[];
+  const client = getClient();
+  let rows: Array<{ name: unknown; data: unknown; version: unknown }>;
 
   try {
-    rows = (await sql()`SELECT name, data, version FROM crm_collections`) as any;
+    const rs = await client.execute('SELECT name, data, version FROM crm_collections');
+    rows = rs.rows as any;
   } catch (err: any) {
-    // Only initialize schema if the table does not exist
-    if (err?.code === '42P01' || String(err?.message || '').includes('does not exist')) {
+    // If table doesn't exist, ensure schema
+    if (String(err?.message || '').includes('no such table')) {
       await ensureSchema();
-      rows = (await sql()`SELECT name, data, version FROM crm_collections`) as any;
+      const rs = await client.execute('SELECT name, data, version FROM crm_collections');
+      rows = rs.rows as any;
     } else {
       throw err;
     }
@@ -167,8 +196,13 @@ async function pgRead(): Promise<CrmDatabase> {
   const raw: Record<string, unknown> = {};
   const snap: Snapshot = { versions: {}, json: {} };
   for (const r of rows) {
-    raw[r.name] = r.data;
-    snap.versions[r.name] = r.version;
+    const name = String(r.name);
+    try {
+      raw[name] = typeof r.data === 'string' ? JSON.parse(r.data) : r.data;
+    } catch {
+      raw[name] = [];
+    }
+    snap.versions[name] = Number(r.version);
   }
   const db = fillDefaults(raw);
   for (const [k, v] of Object.entries(db)) snap.json[k] = JSON.stringify(v);
@@ -183,7 +217,7 @@ async function pgRead(): Promise<CrmDatabase> {
   return db;
 }
 
-async function pgWrite(db: CrmDatabase): Promise<void> {
+async function tursoWrite(db: CrmDatabase): Promise<void> {
   memoryCache = null; // Invalidate cache immediately on write
   const snap = snapshots.get(db);
   const changed: { name: string; json: string; version: number | undefined }[] = [];
@@ -195,43 +229,58 @@ async function pgWrite(db: CrmDatabase): Promise<void> {
   }
   if (changed.length === 0) return;
 
-  // Each statement divides by the number of rows it updated: if the version moved
-  // underneath us, it updates 0 rows -> division by zero -> whole transaction rolls back.
-  const queries = changed.map(c =>
-    c.version === undefined
-      ? sql()`INSERT INTO crm_collections (name, data) VALUES (${c.name}, ${c.json}::jsonb)
-              ON CONFLICT (name) DO UPDATE SET data = EXCLUDED.data,
-                version = crm_collections.version + 1, updated_at = now()
-              RETURNING version`
-      : sql()`WITH u AS (
-                UPDATE crm_collections SET data = ${c.json}::jsonb, version = version + 1, updated_at = now()
-                WHERE name = ${c.name} AND version = ${c.version}
-                RETURNING version
-              )
-              SELECT (SELECT version FROM u) AS version, 1 / (SELECT count(*) FROM u)::int AS ok`
-  );
-
-  let results: { version: number }[][];
+  const client = getClient();
+  const tx = await client.transaction('write');
   try {
-    results = (await sql().transaction(queries)) as { version: number }[][];
-  } catch (err: any) {
-    if (String(err?.message || '').includes('division by zero') || err?.code === '22012') {
-      throw new DbConflictError();
+    const newVersions: Record<string, number> = {};
+    for (const c of changed) {
+      if (c.version === undefined) {
+        await tx.execute({
+          sql: `INSERT INTO crm_collections (name, data, version, updated_at)
+                VALUES (?, ?, 1, datetime('now'))
+                ON CONFLICT (name) DO UPDATE SET
+                  data = excluded.data,
+                  version = crm_collections.version + 1,
+                  updated_at = datetime('now')`,
+          args: [c.name, c.json],
+        });
+        const vRes = await tx.execute({
+          sql: `SELECT version FROM crm_collections WHERE name = ?`,
+          args: [c.name],
+        });
+        newVersions[c.name] = Number(vRes.rows[0]?.version ?? 1);
+      } else {
+        const updateRes = await tx.execute({
+          sql: `UPDATE crm_collections 
+                SET data = ?, version = version + 1, updated_at = datetime('now')
+                WHERE name = ? AND version = ?`,
+          args: [c.json, c.name, c.version],
+        });
+        if (updateRes.rowsAffected === 0) {
+          throw new DbConflictError();
+        }
+        newVersions[c.name] = c.version + 1;
+      }
     }
-    throw err;
-  }
+    await tx.commit();
 
-  // Refresh snapshot so a second writeDb() on the same object works.
-  const newSnap: Snapshot = snap ?? { versions: {}, json: {} };
-  changed.forEach((c, i) => {
-    newSnap.versions[c.name] = results[i][0].version;
-    newSnap.json[c.name] = c.json;
-  });
-  snapshots.set(db, newSnap);
+    // Refresh snapshot so subsequent writeDb() calls on the same object work
+    const newSnap: Snapshot = snap ?? { versions: {}, json: {} };
+    changed.forEach(c => {
+      newSnap.versions[c.name] = newVersions[c.name] ?? (c.version ? c.version + 1 : 1);
+      newSnap.json[c.name] = c.json;
+    });
+    snapshots.set(db, newSnap);
+  } catch (err) {
+    await tx.rollback().catch(() => {});
+    throw err;
+  } finally {
+    tx.close();
+  }
 }
 
 // ---------------------------------------------------------------------------
-// Local file implementation (development without DATABASE_URL)
+// Local file implementation (development without TURSO_DATABASE_URL)
 // ---------------------------------------------------------------------------
 
 const DATA_DIR = path.join(process.cwd(), 'data');
@@ -260,9 +309,9 @@ async function fileWrite(data: CrmDatabase): Promise<void> {
 // ---------------------------------------------------------------------------
 
 export async function loadDb(): Promise<CrmDatabase> {
-  return usingPostgres() ? pgRead() : fileRead();
+  return usingTurso() ? tursoRead() : fileRead();
 }
 
 export async function saveDb(db: CrmDatabase): Promise<void> {
-  return usingPostgres() ? pgWrite(db) : fileWrite(db);
+  return usingTurso() ? tursoWrite(db) : fileWrite(db);
 }

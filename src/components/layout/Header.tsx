@@ -86,12 +86,34 @@ export default function Header() {
     if (!currentUser) return;
     Promise.all([fetchAlerts(), fetchNotifications()]);
 
-    // Polling định kỳ mỗi 45s để tránh nghẽn mạng serverless (Web Push đã đảm nhiệm báo tức thì)
+    let lastFetchTime = Date.now();
+
+    // Polling thông minh mỗi 45s: CHỈ chạy khi tab trình duyệt đang hoạt động (visible).
+    // Giúp chặn 100% request rác khi nhân viên thu nhỏ hoặc chuyển sang tab khác.
     const timer = setInterval(() => {
-      fetchNotifications();
+      if (typeof document !== 'undefined' && !document.hidden) {
+        lastFetchTime = Date.now();
+        fetchNotifications();
+      }
     }, 45000);
 
-    return () => clearInterval(timer);
+    // Khi người dùng quay lại tab sau khi làm việc khác, tự động cập nhật ngay nếu đã quá 30s
+    const handleVisibilityChange = () => {
+      if (typeof document !== 'undefined' && !document.hidden) {
+        const elapsed = Date.now() - lastFetchTime;
+        if (elapsed > 30000) {
+          lastFetchTime = Date.now();
+          fetchNotifications();
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [currentUser]);
 
   const handleMarkAllRead = async () => {

@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useDebounce } from '@/hooks/useDebounce';
 import {
   Package,
   Plus,
@@ -18,7 +19,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { Product } from '@/types/crm';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, compressImageFile } from '@/lib/utils';
 import { useDateFilter } from '@/context/DateFilterContext';
 import DatePeriodFilter from '@/components/common/DatePeriodFilter';
 
@@ -70,17 +71,16 @@ export default function ProductsPage() {
     }
   }, [currentUser, dateFrom, dateTo]);
 
-  // Handle local image file upload in Add/Edit modal
-  const handleModalFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle local image file upload in Add/Edit modal with automatic client-side compression
+  const handleModalFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && file.type.startsWith('image/')) {
-      const reader = new FileReader();
-      reader.onload = event => {
-        if (event.target?.result) {
-          setImageUrl(event.target.result as string);
-        }
-      };
-      reader.readAsDataURL(file);
+      try {
+        const compressed = await compressImageFile(file, 800, 0.82);
+        setImageUrl(compressed);
+      } catch (err) {
+        console.error('Lỗi khi nén ảnh sản phẩm:', err);
+      }
     }
   };
 
@@ -198,16 +198,18 @@ export default function ProductsPage() {
     }
   };
 
-  // Filtered Products by search
-  const filteredProducts = products.filter(p => {
-    if (!searchTerm.trim()) return true;
-    const term = searchTerm.toLowerCase();
-    return (
+  const debouncedSearch = useDebounce(searchTerm, 250);
+
+  // Filtered Products by search (memoized for fast rendering)
+  const filteredProducts = useMemo(() => {
+    if (!debouncedSearch.trim()) return products;
+    const term = debouncedSearch.toLowerCase();
+    return products.filter(p =>
       p.name.toLowerCase().includes(term) ||
       (p.notes && p.notes.toLowerCase().includes(term)) ||
       (p.description && p.description.toLowerCase().includes(term))
     );
-  });
+  }, [products, debouncedSearch]);
 
   return (
     <div className="space-y-6 text-xs">

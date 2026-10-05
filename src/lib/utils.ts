@@ -185,3 +185,46 @@ export async function copyToClipboard(text: string): Promise<boolean> {
   return false;
 }
 
+/**
+ * Nén và resize ảnh client-side bằng HTML5 Canvas trước khi lưu vào DB.
+ * Giảm 95-98% dung lượng dữ liệu (từ vài MB xuống vài chục KB), bảo vệ DB Turso không bị phình to.
+ */
+export async function compressImageFile(
+  file: File,
+  maxWidth: number = 800,
+  quality: number = 0.82
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    if (typeof window === 'undefined') {
+      return reject(new Error('Chỉ hỗ trợ nén ảnh trên môi trường trình duyệt'));
+    }
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = e => {
+      const img = new Image();
+      img.onerror = reject;
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(e.target?.result as string);
+          return;
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.src = e.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  });
+}

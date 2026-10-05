@@ -8,10 +8,11 @@
     "start": "next start -H 0.0.0.0 -p 3000",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "db:migrate": "tsx scripts/migrate-to-postgres.ts"
+    "test:turso": "tsx scripts/test-turso-integration.ts",
+    "db:migrate": "tsx scripts/migrate-to-turso.ts"
   },
   "dependencies": {
-    "@neondatabase/serverless": "^1.2.0",
+    "@libsql/client": "^0.18.0",
     "bcryptjs": "^3.0.3",
     "clsx": "^2.1.1",
     "lucide-react": "^0.454.0",
