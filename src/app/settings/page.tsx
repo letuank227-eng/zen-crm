@@ -742,10 +742,7 @@ export default function SettingsPage() {
                   {isAddingTeam ? (
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   ) : (
-                    <>
-                      <Plus className="w-4 h-4" />
-                      <span>+ Tạo Nhóm Kinh Doanh Mới</span>
-                    </>
+                    <span>Tạo Nhóm Kinh Doanh Mới</span>
                   )}
                 </button>
               </div>
@@ -1120,7 +1117,7 @@ export default function SettingsPage() {
                 ) : (
                   <>
                     <UserPlus className="w-4 h-4" />
-                    <span>+ Thêm &amp; Cấp Quyền Ngay</span>
+                    <span>Thêm &amp; Cấp Quyền Ngay</span>
                   </>
                 )}
               </button>
@@ -1367,7 +1364,7 @@ export default function SettingsPage() {
               onClick={handleAddSource}
               className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold shadow-xs cursor-pointer"
             >
-              + Thêm
+              Thêm
             </button>
           </div>
         </div>

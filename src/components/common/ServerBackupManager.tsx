@@ -452,7 +452,7 @@ export default function ServerBackupManager() {
                 ) : (
                   <Database className="w-3.5 h-3.5" />
                 )}
-                <span>+ Tạo Snapshot Máy Chủ</span>
+                <span>Tạo Snapshot Máy Chủ</span>
               </button>
             </form>
           </div>

@@ -260,8 +260,7 @@ export default function OrdersPage() {
             onClick={() => setShowCreateModal(true)}
             className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
           >
-            <Plus className="w-3.5 h-3.5" />
-            <span>+ Tạo Đơn &amp; Khách Hàng Mới</span>
+            <span>Tạo Đơn &amp; Khách Hàng Mới</span>
           </button>
         </div>
       </div>

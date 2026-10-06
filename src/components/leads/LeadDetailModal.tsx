@@ -731,7 +731,7 @@ export default function LeadDetailModal({
                   defaultValue=""
                   className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 outline-none focus:ring-1 focus:ring-emerald-500"
                 >
-                  <option value="" disabled>+ Thêm sản phẩm / cây...</option>
+                  <option value="" disabled>Thêm sản phẩm / cây...</option>
                   {catalogProducts.map(p => (
                     <option key={p.id} value={p.id} disabled={(lead.productIds || []).includes(p.id)}>
                       {(lead.productIds || []).includes(p.id) ? '✓ ' : ''}{p.name} ({formatCurrency(p.price || 0)})
@@ -925,7 +925,7 @@ export default function LeadDetailModal({
                         className="text-xs text-blue-600 hover:text-blue-700 font-bold flex items-center gap-1"
                       >
                         <PhoneCall className="w-3 h-3" />
-                        <span>+ Thêm tương tác</span>
+                        <span>Thêm tương tác</span>
                       </button>
                     </div>
                   )}

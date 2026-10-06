@@ -250,8 +250,7 @@ export default function ProductsPage() {
               onClick={handleOpenAdd}
               className="px-3.5 sm:px-4 py-1.5 sm:py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
             >
-              <Plus className="w-4 h-4" />
-              <span>+ Thêm Sản Phẩm</span>
+              <span>Thêm Sản Phẩm</span>
             </button>
           )}
         </div>
@@ -413,7 +412,7 @@ export default function ProductsPage() {
                 onClick={handleOpenAdd}
                 className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold shadow-xs cursor-pointer"
               >
-                + Thêm Sản Phẩm Mới
+                Thêm Sản Phẩm Mới
               </button>
             )}
           </div>

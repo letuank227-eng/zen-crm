@@ -204,8 +204,7 @@ function ActivitiesContent() {
             onClick={() => setShowCreateModal(true)}
             className="px-3.5 sm:px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-colors"
           >
-            <Plus className="w-4 h-4" />
-            <span>+ Thêm Task</span>
+            <span>Thêm Task</span>
           </button>
         </div>
       </div>

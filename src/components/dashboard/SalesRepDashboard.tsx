@@ -139,7 +139,7 @@ export default function SalesRepDashboard({ reportData }: SalesRepDashboardProps
             className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs flex items-center gap-1.5 transition-colors cursor-pointer"
           >
             <UserPlus className="w-4 h-4" />
-            <span>+ Thêm Khách Hàng</span>
+            <span>Thêm Khách Hàng</span>
           </button>
         </div>
       </div>

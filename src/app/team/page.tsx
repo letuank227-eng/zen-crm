@@ -232,8 +232,7 @@ export default function TeamPage() {
             }}
             className="self-start sm:self-auto px-3.5 sm:px-4 py-1.5 sm:py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
           >
-            <Plus className="w-4 h-4" />
-            <span>+ Thêm Nhân Viên</span>
+            <span>Thêm Nhân Viên</span>
           </button>
         )}
       </div>
@@ -326,7 +325,7 @@ export default function TeamPage() {
 
         {leaderboard.length === 0 ? (
           <div className="p-6 text-center text-slate-400 text-xs bg-slate-50 rounded-xl border border-dashed border-slate-200">
-            Chưa có nhân sự kinh doanh tham gia thi đua doanh số. Hãy bấm &quot;+ Thêm Nhân Viên&quot; để tạo tài khoản nhân sự cho công ty.
+            Chưa có nhân sự kinh doanh tham gia thi đua doanh số. Hãy bấm &quot;Thêm Nhân Viên&quot; để tạo tài khoản nhân sự cho công ty.
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pb-2">

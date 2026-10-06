@@ -207,7 +207,6 @@ export default function Header() {
             onClick={() => setShowCreateMenu(!showCreateMenu)}
             className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors"
           >
-            <Plus className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Tạo nhanh</span>
           </button>
 
@@ -221,7 +220,7 @@ export default function Header() {
                 className="w-full px-3 py-2 text-left text-xs font-medium text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 flex items-center gap-2"
               >
                 <UserPlus className="w-4 h-4 text-emerald-600" />
-                <span>+ Thêm Lead Mới</span>
+                <span>Thêm Lead Mới</span>
               </button>
               <button
                 onClick={() => {
@@ -231,7 +230,7 @@ export default function Header() {
                 className="w-full px-3 py-2 text-left text-xs font-medium text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 flex items-center gap-2"
               >
                 <CalendarPlus className="w-4 h-4 text-emerald-600" />
-                <span>+ Lên Lịch Hẹn / Task</span>
+                <span>Lên Lịch Hẹn / Task</span>
               </button>
             </div>
           )}

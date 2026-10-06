@@ -178,8 +178,7 @@ function LeadsContent() {
             onClick={() => setShowCreateModal(true)}
             className="px-3.5 sm:px-4 py-1.5 sm:py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-colors"
           >
-            <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            <span>+ Thêm Lead</span>
+            <span>Thêm Lead</span>
           </button>
         </div>
       </div>

@@ -417,7 +417,6 @@ export default function CreateLeadModal({
                 onClick={() => setShowCustomItemInput(prev => !prev)}
                 className="text-emerald-700 hover:text-emerald-800 font-semibold text-[11px] flex items-center gap-1 hover:underline cursor-pointer"
               >
-                <Plus className="w-3 h-3" />
                 <span>Thêm món tự nhập</span>
               </button>
             </div>
@@ -480,7 +479,7 @@ export default function CreateLeadModal({
                     onClick={handleAddCustomItem}
                     className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded font-bold text-[11px]"
                   >
-                    + Thêm vào đơn
+                    Thêm vào đơn
                   </button>
                 </div>
               </div>
@@ -689,7 +688,7 @@ export default function CreateLeadModal({
           className="px-5 py-2 sm:py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 disabled:opacity-50 text-white rounded-xl font-bold shadow-md shadow-emerald-600/25 transition-all flex items-center gap-1.5 text-xs"
         >
           <CheckCircle2 className="w-4 h-4" />
-          <span>{isSubmitting ? 'Đang tạo đơn...' : '+ Lưu Đơn Hàng & Lead'}</span>
+          <span>{isSubmitting ? 'Đang tạo đơn...' : 'Lưu Đơn Hàng & Lead'}</span>
         </button>
       </div>
     </div>
