@@ -22,6 +22,7 @@ import {
   MapPin,
   FileText,
   CreditCard,
+  Search,
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 
@@ -67,6 +68,8 @@ export default function CreateLeadModal({
 
   // 4. Sản phẩm khách mua
   const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
+  const [productSearchTerm, setProductSearchTerm] = useState('');
+  const [isProductDropdownOpen, setIsProductDropdownOpen] = useState(false);
   const [customItemName, setCustomItemName] = useState('');
   const [customItemPrice, setCustomItemPrice] = useState<string>('');
   const [showCustomItemInput, setShowCustomItemInput] = useState(false);
@@ -421,25 +424,98 @@ export default function CreateLeadModal({
               </button>
             </div>
 
-            {/* Dropdown chọn từ catalog có sẵn */}
+            {/* Ô tìm kiếm sản phẩm thông minh & Dropdown danh sách mệnh giá */}
             <div className="relative">
-              <select
-                onChange={e => {
-                  handleSelectProduct(e.target.value);
-                  e.target.value = '';
-                }}
-                defaultValue=""
-                className="w-full p-2 bg-white border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-emerald-500 text-xs text-slate-700 cursor-pointer"
-              >
-                <option value="" disabled>
-                  -- Chọn cây thủy sinh / vật liệu / gói setup có sẵn --
-                </option>
-                {products.map(p => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} - Giá niêm yết: {formatCurrency(p.price || p.retailPrice || 0)}
-                  </option>
-                ))}
-              </select>
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  type="text"
+                  value={productSearchTerm}
+                  onChange={e => {
+                    setProductSearchTerm(e.target.value);
+                    setIsProductDropdownOpen(true);
+                  }}
+                  onFocus={() => setIsProductDropdownOpen(true)}
+                  placeholder="Gõ tên cây, chậu hoặc mệnh giá để tìm kiếm (VD: Hồng Môn Đỏ)..."
+                  className="w-full pl-9 pr-8 py-2 bg-white border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 text-xs text-slate-800 placeholder-slate-400 font-medium"
+                />
+                {productSearchTerm && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setProductSearchTerm('');
+                    }}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+
+              {/* Menu kết quả tìm kiếm sổ xuống */}
+              {isProductDropdownOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setIsProductDropdownOpen(false)}
+                  />
+                  <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-60 overflow-y-auto z-50 py-1 divide-y divide-slate-100 animate-in fade-in zoom-in-95">
+                    {products
+                      .filter(p => {
+                        if (!productSearchTerm.trim()) return true;
+                        const term = productSearchTerm.toLowerCase().trim();
+                        const pName = (p.name || '').toLowerCase();
+                        const pPrice = String(p.price || p.retailPrice || 0);
+                        const pCat = (p.category || '').toLowerCase();
+                        return pName.includes(term) || pPrice.includes(term) || pCat.includes(term);
+                      })
+                      .map(p => {
+                        const price = p.price || p.retailPrice || 0;
+                        const isSelected = selectedItems.some(it => it.productId === p.id);
+                        return (
+                          <div
+                            key={p.id}
+                            onClick={() => {
+                              handleSelectProduct(p.id);
+                              setProductSearchTerm('');
+                              setIsProductDropdownOpen(false);
+                            }}
+                            className={`px-3 py-2 hover:bg-emerald-50 cursor-pointer flex items-center justify-between text-xs transition-colors ${
+                              isSelected ? 'bg-emerald-50/60' : ''
+                            }`}
+                          >
+                            <div className="flex-1 min-w-0 pr-2">
+                              <span className="font-bold text-slate-900 uppercase tracking-tight block truncate">
+                                {p.name}
+                              </span>
+                              {p.category && (
+                                <span className="text-[10px] text-slate-400 block truncate">
+                                  {p.category}
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-right flex-shrink-0">
+                              <span className="text-slate-500 font-medium text-[11px]">Giá niêm yết: </span>
+                              <span className="font-extrabold text-emerald-700 font-futura">
+                                {formatCurrency(price)}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                    {products.filter(p => {
+                      if (!productSearchTerm.trim()) return true;
+                      const term = productSearchTerm.toLowerCase().trim();
+                      return (p.name || '').toLowerCase().includes(term) || String(p.price || p.retailPrice || 0).includes(term);
+                    }).length === 0 && (
+                      <div className="p-4 text-center text-slate-400 text-xs">
+                        Không tìm thấy sản phẩm nào khớp với &quot;{productSearchTerm}&quot;
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Input thêm sản phẩm tùy chỉnh nếu cần */}

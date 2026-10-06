@@ -27,6 +27,7 @@ import {
   Truck,
   CheckCircle2,
   AlertCircle,
+  Search,
 } from 'lucide-react';
 import { Lead, Note, AuditLog, Deal, InteractionLog, Order } from '@/types/crm';
 import { formatDate, formatDateTime, formatCurrency, canViewCustomerPhone, canViewCustomerPersonalInfo, maskPhoneNumber } from '@/lib/utils';
@@ -56,6 +57,8 @@ export default function LeadDetailModal({
   const [sources, setSources] = useState<string[]>([]);
   const [statuses, setStatuses] = useState<any[]>([]);
   const [catalogProducts, setCatalogProducts] = useState<any[]>(products);
+  const [detailProductSearch, setDetailProductSearch] = useState('');
+  const [isDetailProductDropdownOpen, setIsDetailProductDropdownOpen] = useState(false);
 
   const [activeTab, setActiveTab] = useState<'overview' | 'timeline' | 'interactions' | 'deals' | 'orders' | 'audit'>('overview');
   const [newNoteContent, setNewNoteContent] = useState('');
@@ -720,24 +723,88 @@ export default function LeadDetailModal({
               </div>
 
               {canViewCustomerPersonalInfo(currentUser, lead.assignedSaleId) && (
-                <select
-                  onChange={e => {
-                    const val = e.target.value;
-                    if (val) {
-                      handleAddProduct(val);
-                      e.target.value = '';
-                    }
-                  }}
-                  defaultValue=""
-                  className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 outline-none focus:ring-1 focus:ring-emerald-500"
-                >
-                  <option value="" disabled>Thêm sản phẩm / cây...</option>
-                  {catalogProducts.map(p => (
-                    <option key={p.id} value={p.id} disabled={(lead.productIds || []).includes(p.id)}>
-                      {(lead.productIds || []).includes(p.id) ? '✓ ' : ''}{p.name} ({formatCurrency(p.price || 0)})
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <div className="relative">
+                    <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      type="text"
+                      value={detailProductSearch}
+                      onChange={e => {
+                        setDetailProductSearch(e.target.value);
+                        setIsDetailProductDropdownOpen(true);
+                      }}
+                      onFocus={() => setIsDetailProductDropdownOpen(true)}
+                      placeholder="Tìm cây / mệnh giá để gắn thêm..."
+                      className="w-full pl-8 pr-7 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-800 outline-none focus:ring-1 focus:ring-emerald-500 placeholder-slate-400"
+                    />
+                    {detailProductSearch && (
+                      <button
+                        type="button"
+                        onClick={() => setDetailProductSearch('')}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+
+                  {isDetailProductDropdownOpen && (
+                    <>
+                      <div
+                        className="fixed inset-0 z-40"
+                        onClick={() => setIsDetailProductDropdownOpen(false)}
+                      />
+                      <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-52 overflow-y-auto z-50 py-1 divide-y divide-slate-100 animate-in fade-in zoom-in-95 text-xs">
+                        {catalogProducts
+                          .filter(p => {
+                            if (!detailProductSearch.trim()) return true;
+                            const term = detailProductSearch.toLowerCase().trim();
+                            const pName = (p.name || '').toLowerCase();
+                            const pPrice = String(p.price || 0);
+                            return pName.includes(term) || pPrice.includes(term);
+                          })
+                          .map(p => {
+                            const isAttached = (lead.productIds || []).includes(p.id);
+                            return (
+                              <div
+                                key={p.id}
+                                onClick={() => {
+                                  if (!isAttached) {
+                                    handleAddProduct(p.id);
+                                    setDetailProductSearch('');
+                                    setIsDetailProductDropdownOpen(false);
+                                  }
+                                }}
+                                className={`px-2.5 py-1.5 flex items-center justify-between transition-colors ${
+                                  isAttached
+                                    ? 'bg-slate-50 text-slate-400 cursor-not-allowed'
+                                    : 'hover:bg-emerald-50 cursor-pointer text-slate-800'
+                                }`}
+                              >
+                                <div className="truncate pr-2">
+                                  {isAttached && <span className="text-emerald-600 font-bold mr-1">✓</span>}
+                                  <span className="font-semibold">{p.name}</span>
+                                </div>
+                                <span className="font-bold text-emerald-700 font-futura flex-shrink-0">
+                                  {formatCurrency(p.price || 0)}
+                                </span>
+                              </div>
+                            );
+                          })}
+
+                        {catalogProducts.filter(p => {
+                          if (!detailProductSearch.trim()) return true;
+                          const term = detailProductSearch.toLowerCase().trim();
+                          return (p.name || '').toLowerCase().includes(term) || String(p.price || 0).includes(term);
+                        }).length === 0 && (
+                          <div className="p-3 text-center text-slate-400 text-xs">
+                            Không tìm thấy cây nào phù hợp
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
               )}
             </div>
           </div>
