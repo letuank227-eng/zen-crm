@@ -52,7 +52,6 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       name: p.name,
       price: p.price ?? p.retailPrice,
       retailPrice: p.retailPrice,
-      imageUrl: p.imageUrl,
       category: p.category,
       unit: p.unit,
     })),

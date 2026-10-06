@@ -39,7 +39,14 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     pipeline,
     notes,
     auditLogs,
-    products: db.products,
+    products: db.products.map(p => ({
+      id: p.id,
+      name: p.name,
+      price: p.price ?? p.retailPrice,
+      retailPrice: p.retailPrice,
+      category: p.category,
+      unit: p.unit,
+    })),
     sales: allowedSales,
   });
 }

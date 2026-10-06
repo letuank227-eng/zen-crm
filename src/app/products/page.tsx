@@ -18,6 +18,7 @@ import {
   Upload,
   RefreshCw,
   Eye,
+  ChevronDown,
 } from 'lucide-react';
 import { Product } from '@/types/crm';
 import { formatCurrency, compressImageFile } from '@/lib/utils';
@@ -217,6 +218,9 @@ export default function ProductsPage() {
 
   const debouncedSearch = useDebounce(searchTerm, 250);
 
+  // Pagination / Lazy rendering: show 15 items initially so initial DOM is light and fast
+  const [visibleCount, setVisibleCount] = useState<number>(18);
+
   // Filtered Products by search (memoized for fast rendering)
   const filteredProducts = useMemo(() => {
     if (!debouncedSearch.trim()) return products;
@@ -227,6 +231,10 @@ export default function ProductsPage() {
       (p.description && p.description.toLowerCase().includes(term))
     );
   }, [products, debouncedSearch]);
+
+  const displayedProducts = useMemo(() => {
+    return filteredProducts.slice(0, visibleCount);
+  }, [filteredProducts, visibleCount]);
 
   return (
     <div className="space-y-6 text-xs">
@@ -286,7 +294,7 @@ export default function ProductsPage() {
 
       {/* PRODUCTS GRID - EXACT LAYOUT: 1. ẢNH -> 2. TÊN SẢN PHẨM -> 3. GIÁ BÁN -> 4. NỘI DUNG GHI CHÚ */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-        {filteredProducts.map(p => {
+        {displayedProducts.map((p, idx) => {
           const displayPrice = p.price ?? p.retailPrice ?? 0;
           const commRate = p.commissionRate !== undefined ? p.commissionRate : 10;
           const commAmount = p.commissionAmount !== undefined ? p.commissionAmount : Math.round((displayPrice * commRate) / 100);
@@ -347,6 +355,8 @@ export default function ProductsPage() {
                   <img
                     src={p.imageUrl || 'https://images.unsplash.com/photo-1522069169874-c58ec4b76be5?w=600&auto=format&fit=crop&q=80'}
                     alt={p.name}
+                    loading={idx > 2 ? 'lazy' : 'eager'}
+                    decoding="async"
                     className="w-full h-full object-cover object-center relative z-1 group-hover/img:scale-105 transition-transform duration-500"
                     onError={e => {
                       (e.target as HTMLElement).style.display = 'none';
@@ -418,6 +428,20 @@ export default function ProductsPage() {
           </div>
         )}
       </div>
+
+      {/* Nút Xem Thêm (Load More) Khi Có Nhiều Sản Phẩm */}
+      {displayedProducts.length < filteredProducts.length && (
+        <div className="flex justify-center pt-2 pb-6">
+          <button
+            type="button"
+            onClick={() => setVisibleCount(prev => prev + 18)}
+            className="px-6 py-2.5 bg-white hover:bg-emerald-50 text-emerald-700 border border-emerald-300 hover:border-emerald-500 font-bold rounded-xl shadow-2xs hover:shadow-sm transition-all flex items-center gap-2 cursor-pointer text-xs"
+          >
+            <span>Xem thêm sản phẩm ({displayedProducts.length}/{filteredProducts.length})</span>
+            <ChevronDown className="w-4 h-4 text-emerald-600" />
+          </button>
+        </div>
+      )}
 
       {/* MODAL 1: THÊM / SỬA / XEM CHI TIẾT SẢN PHẨM */}
       {showProductModal && (
