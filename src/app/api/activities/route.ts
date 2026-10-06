@@ -6,7 +6,7 @@ import { Task, TaskType, TaskStatus } from '@/types/crm';
 export async function GET(request: NextRequest) {
   const userId = request.headers.get('x-user-id') || undefined;
   const user = await getCurrentUser(userId);
-  const db = await readDb();
+  const db = await readDb({ includeProducts: false });
 
   // Dynamically resolve overdue status for display without blocking DB write
   const nowTime = Date.now();

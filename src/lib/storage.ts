@@ -169,29 +169,39 @@ interface MemoryCache {
 let memoryCache: MemoryCache | null = null;
 const BURST_CACHE_TTL_MS = 12000;
 
-async function tursoRead(): Promise<CrmDatabase> {
+async function tursoRead(options?: { includeProducts?: boolean }): Promise<CrmDatabase> {
+  const includeProducts = options?.includeProducts ?? true;
   const now = Date.now();
+
+  // If memory cache exists and has products (or caller doesn't need products), reuse cache
   if (memoryCache && now < memoryCache.expiresAt) {
-    const cloned = JSON.parse(JSON.stringify(memoryCache.db));
-    const isolatedSnap: Snapshot = {
-      versions: { ...memoryCache.snap.versions },
-      json: { ...memoryCache.snap.json },
-    };
-    snapshots.set(cloned, isolatedSnap);
-    return cloned;
+    if (!includeProducts || (memoryCache.db.products && memoryCache.db.products.length > 0)) {
+      const cloned = JSON.parse(JSON.stringify(memoryCache.db));
+      const isolatedSnap: Snapshot = {
+        versions: { ...memoryCache.snap.versions },
+        json: { ...memoryCache.snap.json },
+      };
+      snapshots.set(cloned, isolatedSnap);
+      return cloned;
+    }
   }
 
   const client = getClient();
   let rows: Array<{ name: unknown; data: unknown; version: unknown }>;
 
+  // Selective query: when includeProducts is false, skip 16MB products row completely!
+  const querySql = includeProducts
+    ? 'SELECT name, data, version FROM crm_collections'
+    : "SELECT name, data, version FROM crm_collections WHERE name != 'products'";
+
   try {
-    const rs = await client.execute('SELECT name, data, version FROM crm_collections');
+    const rs = await client.execute(querySql);
     rows = rs.rows as any;
   } catch (err: any) {
     // If table doesn't exist, ensure schema
     if (String(err?.message || '').includes('no such table')) {
       await ensureSchema();
-      const rs = await client.execute('SELECT name, data, version FROM crm_collections');
+      const rs = await client.execute(querySql);
       rows = rs.rows as any;
     } else {
       throw err;
@@ -209,15 +219,27 @@ async function tursoRead(): Promise<CrmDatabase> {
     }
     snap.versions[name] = Number(r.version);
   }
+
+  // If products was omitted, keep empty or preserve from prior memoryCache if available
+  if (!includeProducts) {
+    raw.products = memoryCache?.db?.products || [];
+    if (memoryCache?.snap?.versions?.products) {
+      snap.versions.products = memoryCache.snap.versions.products;
+    }
+  }
+
   const db = fillDefaults(raw);
   for (const [k, v] of Object.entries(db)) snap.json[k] = JSON.stringify(v);
   snapshots.set(db, snap);
 
-  memoryCache = {
-    db,
-    snap,
-    expiresAt: now + BURST_CACHE_TTL_MS,
-  };
+  // If we fetched the full DB with products, update memoryCache
+  if (includeProducts) {
+    memoryCache = {
+      db,
+      snap,
+      expiresAt: now + BURST_CACHE_TTL_MS,
+    };
+  }
 
   return db;
 }
@@ -313,8 +335,8 @@ async function fileWrite(data: CrmDatabase): Promise<void> {
 
 // ---------------------------------------------------------------------------
 
-export async function loadDb(): Promise<CrmDatabase> {
-  return usingTurso() ? tursoRead() : fileRead();
+export async function loadDb(options?: { includeProducts?: boolean }): Promise<CrmDatabase> {
+  return usingTurso() ? tursoRead(options) : fileRead();
 }
 
 export async function saveDb(db: CrmDatabase): Promise<void> {

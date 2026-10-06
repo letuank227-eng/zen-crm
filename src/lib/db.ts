@@ -21,8 +21,8 @@ export {
 };
 export type { ServerSnapshotMeta };
 
-export async function readDb(): Promise<CrmDatabase> {
-  return loadDb();
+export async function readDb(options?: { includeProducts?: boolean }): Promise<CrmDatabase> {
+  return loadDb(options);
 }
 
 export async function writeDb(data: CrmDatabase): Promise<void> {
@@ -46,7 +46,7 @@ export class AuthError extends Error {
  */
 export async function getCurrentUser(userId?: string): Promise<User> {
   if (!userId) throw new AuthError();
-  const db = await readDb();
+  const db = await readDb({ includeProducts: false });
   const user = db.users.find(u => u.id === userId);
   if (!user) throw new AuthError();
   if (user.isLocked) throw new AuthError('Tài khoản đã bị khóa');

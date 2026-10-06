@@ -4,7 +4,7 @@ import { readDb, writeDb, getCurrentUser } from '@/lib/db';
 export async function GET(request: NextRequest) {
   const userId = request.headers.get('x-user-id') || undefined;
   const user = await getCurrentUser(userId);
-  const db = await readDb();
+  const db = await readDb({ includeProducts: false });
 
   const allNotifs = db.notifications || [];
 

@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ currentUser: null, isAuthenticated: false, users: [], teams: [] });
   }
 
-  const db = await readDb();
+  const db = await readDb({ includeProducts: false });
   const currentUser = db.users.find(u => u.id === userId && !u.isLocked) || null;
   if (!currentUser) {
     return NextResponse.json({ currentUser: null, isAuthenticated: false, users: [], teams: [] });

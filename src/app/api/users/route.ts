@@ -9,7 +9,7 @@ const VALID_ROLES: Role[] = ['ADMIN', 'LEADER', 'SALE', 'STAFF'];
 export async function GET(request: NextRequest) {
   const userId = request.headers.get('x-user-id') || undefined;
   const user = await getCurrentUser(userId);
-  const db = await readDb();
+  const db = await readDb({ includeProducts: false });
   const searchParams = request.nextUrl.searchParams;
   const dateFrom = searchParams.get('dateFrom');
   const dateTo = searchParams.get('dateTo');

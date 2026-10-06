@@ -4,7 +4,7 @@ import { readDb, getCurrentUser } from '@/lib/db';
 export async function GET(request: NextRequest) {
   const userId = request.headers.get('x-user-id') || undefined;
   const user = await getCurrentUser(userId);
-  const db = await readDb();
+  const db = await readDb({ includeProducts: false });
 
   // Sale reps can only see logs relevant to their actions; Admins and Leaders see all
   let logs = db.auditLogs;
