@@ -66,14 +66,12 @@
 }
 
 html {
-  touch-action: pan-x pan-y;
   -webkit-text-size-adjust: 100%;
   -moz-text-size-adjust: 100%;
   text-size-adjust: 100%;
-  overscroll-behavior: none;
   overflow-x: hidden;
   width: 100%;
-  max-width: 100vw;
+  height: 100%;
 }
 
 body {
@@ -82,20 +80,19 @@ body {
   font-family: 'Futura-Numbers', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   -webkit-tap-highlight-color: transparent;
   font-feature-settings: "cv01" 1, "tnum" 1;
-  touch-action: pan-x pan-y;
   -webkit-text-size-adjust: 100%;
   -moz-text-size-adjust: 100%;
   text-size-adjust: 100%;
-  overscroll-behavior: none;
   overflow-x: hidden;
   width: 100%;
-  max-width: 100vw;
-  position: relative;
+  height: 100%;
 }
 
-/* Khóa cử chỉ double-tap zoom trên các phần tử tương tác */
-button, a, input, select, textarea {
-  touch-action: manipulation;
+/* Kích hoạt cuộn siêu mượt (Momentum scrolling) chuẩn native 60/120fps trên iOS và Android */
+main,
+.overflow-y-auto,
+.overflow-x-auto {
+  -webkit-overflow-scrolling: touch !important;
 }
 
 /* Ngăn iOS Safari tự động phóng to trang khi ấn vào ô nhập liệu (yêu cầu font >= 16px) */

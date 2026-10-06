@@ -48,13 +48,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex-1 flex min-h-screen overflow-hidden relative w-full max-w-full">
+    <div className="flex h-screen h-[100dvh] w-full max-w-full overflow-hidden relative bg-slate-50">
       {/* Left Sidebar (Desktop fixed, Mobile responsive drawer) */}
       <Sidebar />
 
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden w-full max-w-full">
+      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden w-full max-w-full">
         <Header />
-        <main className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-4 md:p-6 pb-20 lg:pb-6 bg-slate-50 w-full max-w-full">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-4 md:p-6 pb-24 lg:pb-6 bg-slate-50 w-full max-w-full">
           {children}
         </main>
       </div>

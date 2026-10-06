@@ -62,16 +62,11 @@ export default function RootLayout({
                   });
                 });
               }
-
-              // Khóa hoàn toàn phóng to / thu nhỏ (Pinch-to-zoom) trên iOS & Android
-              document.addEventListener('gesturestart', function(e) { e.preventDefault(); }, { passive: false });
-              document.addEventListener('gesturechange', function(e) { e.preventDefault(); }, { passive: false });
-              document.addEventListener('gestureend', function(e) { e.preventDefault(); }, { passive: false });
             `,
           }}
         />
       </head>
-      <body className="antialiased min-h-screen flex flex-col bg-slate-50 text-slate-900 selection:bg-emerald-100 selection:text-emerald-900 w-full overflow-x-hidden touch-manipulation">
+      <body className="antialiased min-h-screen flex flex-col bg-slate-50 text-slate-900 selection:bg-emerald-100 selection:text-emerald-900">
         <PwaProvider>
           <AuthProvider>
             <DateFilterProvider>
