@@ -9,7 +9,8 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "test:turso": "tsx scripts/test-turso-integration.ts",
-    "db:migrate": "tsx scripts/migrate-to-turso.ts"
+    "db:migrate": "tsx scripts/migrate-to-turso.ts",
+    "db:backup": "tsx scripts/backup-db.ts"
   },
   "dependencies": {
     "@libsql/client": "^0.18.0",

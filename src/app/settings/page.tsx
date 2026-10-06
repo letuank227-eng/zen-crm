@@ -35,6 +35,7 @@ import {
 import { User, Team, Role } from '@/types/crm';
 import { generateRandomPassword, copyToClipboard, formatCurrency } from '@/lib/utils';
 import PushNotificationManager from '@/components/common/PushNotificationManager';
+import ServerBackupManager from '@/components/common/ServerBackupManager';
 
 export default function SettingsPage() {
   const { fetchWithAuth, currentUser, refreshSession } = useAuth();
@@ -641,6 +642,9 @@ export default function SettingsPage() {
           </div>
         </div>
       )}
+
+      {/* ================= SECTION: QUẢN TRỊ SAO LƯU & KHÔI PHỤC DỮ LIỆU MÁY CHỦ (SERVER BACKUP & RECOVERY) ================= */}
+      {isAdmin && <ServerBackupManager />}
 
       {/* ================= SECTION: QUẢN TRỊ NHÓM SALE (SALE TEAMS) - CHỈ DÀNH CHO ADMIN ================= */}
       {isAdmin && (

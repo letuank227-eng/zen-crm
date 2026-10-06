@@ -1,6 +1,9 @@
 node_modules/
 .next/
-data/
+data/*
+!data/backups/
+data/backups/*
+!data/backups/*_latest.json
 .env*
 !.env.example
 *.tsbuildinfo

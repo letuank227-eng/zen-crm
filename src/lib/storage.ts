@@ -113,18 +113,23 @@ export async function seedCollections(data: CrmDatabase): Promise<void> {
 
 /** Overwrites every collection (used by migration / restore). */
 export async function replaceAllCollections(data: CrmDatabase): Promise<void> {
-  await ensureSchemaTableOnly();
-  const client = getClient();
-  const stmts = Object.entries(data).map(([name, value]) => ({
-    sql: `INSERT INTO crm_collections (name, data, version, updated_at)
-          VALUES (?, ?, 1, datetime('now'))
-          ON CONFLICT (name) DO UPDATE SET
-            data = excluded.data,
-            version = crm_collections.version + 1,
-            updated_at = datetime('now')`,
-    args: [name, JSON.stringify(value)],
-  }));
-  await client.batch(stmts, 'write');
+  memoryCache = null;
+  if (usingTurso()) {
+    await ensureSchemaTableOnly();
+    const client = getClient();
+    const stmts = Object.entries(data).map(([name, value]) => ({
+      sql: `INSERT INTO crm_collections (name, data, version, updated_at)
+            VALUES (?, ?, 1, datetime('now'))
+            ON CONFLICT (name) DO UPDATE SET
+              data = excluded.data,
+              version = crm_collections.version + 1,
+              updated_at = datetime('now')`,
+      args: [name, JSON.stringify(value)],
+    }));
+    await client.batch(stmts, 'write');
+  } else {
+    await fileWrite(data);
+  }
 }
 
 async function ensureSchemaTableOnly(): Promise<void> {
@@ -315,3 +320,146 @@ export async function loadDb(): Promise<CrmDatabase> {
 export async function saveDb(db: CrmDatabase): Promise<void> {
   return usingTurso() ? tursoWrite(db) : fileWrite(db);
 }
+
+// ---------------------------------------------------------------------------
+// Server Snapshot & Disaster Recovery
+// ---------------------------------------------------------------------------
+
+export interface ServerSnapshotMeta {
+  id: string;
+  createdAt: string;
+  createdBy: string;
+  description: string;
+  summary: {
+    usersCount: number;
+    leadsCount: number;
+    ordersCount: number;
+    productsCount: number;
+    dealsCount: number;
+  };
+}
+
+export async function createServerSnapshot(
+  createdBy = 'Admin',
+  description = 'Bản sao lưu thủ công'
+): Promise<ServerSnapshotMeta> {
+  const db = await loadDb();
+  const id = `snap_${Date.now()}`;
+  const now = new Date().toISOString();
+  const summaryObj = {
+    usersCount: Array.isArray(db.users) ? db.users.length : 0,
+    leadsCount: Array.isArray(db.leads) ? db.leads.length : 0,
+    ordersCount: Array.isArray(db.orders) ? db.orders.length : 0,
+    productsCount: Array.isArray(db.products) ? db.products.length : 0,
+    dealsCount: Array.isArray(db.deals) ? db.deals.length : 0,
+  };
+  const summaryStr = JSON.stringify(summaryObj);
+
+  if (usingTurso()) {
+    const client = getClient();
+    await client.execute(`
+      CREATE TABLE IF NOT EXISTS crm_backups (
+        id TEXT PRIMARY KEY,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        created_by TEXT,
+        description TEXT,
+        summary TEXT,
+        data TEXT NOT NULL
+      )
+    `);
+    await client.execute({
+      sql: `INSERT INTO crm_backups (id, created_at, created_by, description, summary, data)
+            VALUES (?, ?, ?, ?, ?, ?)`,
+      args: [id, now, createdBy, description, summaryStr, JSON.stringify(db)],
+    });
+    // Keep 10 most recent snapshots in DB
+    await client.execute(`
+      DELETE FROM crm_backups WHERE id NOT IN (
+        SELECT id FROM crm_backups ORDER BY created_at DESC LIMIT 10
+      )
+    `);
+  }
+
+  // Also update data/backups/turso_backup_latest.json on local filesystem if available
+  try {
+    const backupDir = path.join(process.cwd(), 'data', 'backups');
+    if (fs.existsSync(backupDir)) {
+      const payload = {
+        timestamp: now,
+        id,
+        createdBy,
+        description,
+        summary: summaryObj,
+        data: db,
+      };
+      fs.writeFileSync(path.join(backupDir, 'turso_backup_latest.json'), JSON.stringify(payload, null, 2), 'utf-8');
+    }
+  } catch {
+    // Non-fatal if filesystem is read-only in serverless
+  }
+
+  return {
+    id,
+    createdAt: now,
+    createdBy,
+    description,
+    summary: summaryObj,
+  };
+}
+
+export async function listServerSnapshots(): Promise<ServerSnapshotMeta[]> {
+  if (usingTurso()) {
+    const client = getClient();
+    try {
+      await client.execute(`
+        CREATE TABLE IF NOT EXISTS crm_backups (
+          id TEXT PRIMARY KEY,
+          created_at TEXT NOT NULL DEFAULT (datetime('now')),
+          created_by TEXT,
+          description TEXT,
+          summary TEXT,
+          data TEXT NOT NULL
+        )
+      `);
+      const res = await client.execute(
+        'SELECT id, created_at, created_by, description, summary FROM crm_backups ORDER BY created_at DESC LIMIT 10'
+      );
+      return res.rows.map((r: any) => {
+        let parsedSummary = { usersCount: 0, leadsCount: 0, ordersCount: 0, productsCount: 0, dealsCount: 0 };
+        try {
+          if (r.summary) parsedSummary = JSON.parse(String(r.summary));
+        } catch {}
+        return {
+          id: String(r.id),
+          createdAt: String(r.created_at),
+          createdBy: String(r.created_by || 'Admin'),
+          description: String(r.description || ''),
+          summary: parsedSummary,
+        };
+      });
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+export async function restoreFromServerSnapshot(snapshotId: string): Promise<boolean> {
+  if (usingTurso()) {
+    const client = getClient();
+    const res = await client.execute({
+      sql: 'SELECT data FROM crm_backups WHERE id = ?',
+      args: [snapshotId],
+    });
+    if (res.rows.length === 0) {
+      throw new Error(`Không tìm thấy bản sao lưu máy chủ với mã ${snapshotId}`);
+    }
+    const rawData = JSON.parse(String(res.rows[0].data));
+    // Create safety pre-restore backup first
+    await createServerSnapshot('System', `Tự động lưu dự phòng trước khi khôi phục bản ${snapshotId}`);
+    await replaceAllCollections(rawData);
+    return true;
+  }
+  return false;
+}
+

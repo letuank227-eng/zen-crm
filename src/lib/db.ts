@@ -1,8 +1,25 @@
 import { CrmDatabase, User, Lead, Deal, Task, Note, AuditLog, Product, Order, Role } from '@/types/crm';
 import { generateId } from './utils';
-import { loadDb, saveDb, DbConflictError } from './storage';
+import {
+  loadDb,
+  saveDb,
+  replaceAllCollections,
+  createServerSnapshot,
+  listServerSnapshots,
+  restoreFromServerSnapshot,
+  usingTurso,
+  DbConflictError,
+  ServerSnapshotMeta,
+} from './storage';
 
-export { DbConflictError };
+export {
+  DbConflictError,
+  createServerSnapshot,
+  listServerSnapshots,
+  restoreFromServerSnapshot,
+  usingTurso,
+};
+export type { ServerSnapshotMeta };
 
 export async function readDb(): Promise<CrmDatabase> {
   return loadDb();
@@ -10,6 +27,10 @@ export async function readDb(): Promise<CrmDatabase> {
 
 export async function writeDb(data: CrmDatabase): Promise<void> {
   return saveDb(data);
+}
+
+export async function restoreDb(data: CrmDatabase): Promise<void> {
+  return replaceAllCollections(data);
 }
 
 export class AuthError extends Error {
