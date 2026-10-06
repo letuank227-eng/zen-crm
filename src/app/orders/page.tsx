@@ -323,10 +323,10 @@ export default function OrdersPage() {
       )}
 
       {/* Filter & Search Bar */}
-      <div className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3 text-xs">
-        <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-[280px]">
+      <div className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 flex-1 w-full">
           {/* Search Input */}
-          <div className="relative flex-1 min-w-[200px] max-w-sm">
+          <div className="relative flex-1 w-full sm:max-w-xs md:max-w-sm">
             <input
               type="text"
               value={searchTerm}
@@ -345,29 +345,31 @@ export default function OrdersPage() {
             )}
           </div>
 
-          <select
-            value={statusFilter}
-            onChange={e => setStatusFilter(e.target.value)}
-            className="p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none font-medium text-slate-700 text-xs"
-          >
-            <option value="ALL">-- Tất cả trạng thái --</option>
-            <option value="PENDING">1/ Chờ xử lý</option>
-            <option value="DELIVERED_UNPAID">2/ Đã giao hàng thành công (chưa thanh toán)</option>
-            <option value="COMPLETED">3/ Hoàn thành</option>
-            <option value="CANCELLED">4/ Đơn hàng hủy</option>
-          </select>
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center w-full sm:w-auto">
+            <select
+              value={statusFilter}
+              onChange={e => setStatusFilter(e.target.value)}
+              className="w-full sm:w-auto p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none font-medium text-slate-700 text-xs"
+            >
+              <option value="ALL">-- Tất cả trạng thái --</option>
+              <option value="PENDING">1/ Chờ xử lý</option>
+              <option value="DELIVERED_UNPAID">2/ Đã giao (chưa thanh toán)</option>
+              <option value="COMPLETED">3/ Hoàn thành</option>
+              <option value="CANCELLED">4/ Đơn hàng hủy</option>
+            </select>
 
-          <select
-            value={hasDebtFilter}
-            onChange={e => setHasDebtFilter(e.target.value)}
-            className="p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none font-medium text-slate-700 text-xs"
-          >
-            <option value="ALL">-- Tất cả công nợ --</option>
-            <option value="DEBT">Chỉ đơn còn nợ</option>
-          </select>
+            <select
+              value={hasDebtFilter}
+              onChange={e => setHasDebtFilter(e.target.value)}
+              className="w-full sm:w-auto p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none font-medium text-slate-700 text-xs"
+            >
+              <option value="ALL">-- Tất cả công nợ --</option>
+              <option value="DEBT">Chỉ đơn còn nợ</option>
+            </select>
+          </div>
         </div>
 
-        <div className="text-[11px] text-slate-500 font-medium">
+        <div className="text-[11px] text-slate-500 font-medium whitespace-nowrap self-end md:self-auto">
           Hiển thị <strong>{filteredOrders.length}</strong> / {orders.length} đơn hàng
         </div>
       </div>

@@ -197,33 +197,35 @@ export default function DatePeriodFilter({ compact = false, className = '' }: Da
           {/* [PHẦN 2]: MỤC TÌM KIẾM NGÀY (TỪ NGÀY -> ĐẾN NGÀY) */}
           <form
             onSubmit={handleSearchDateSubmit}
-            className="flex flex-wrap sm:flex-nowrap items-center gap-2 bg-slate-50/80 p-1.5 rounded-xl border border-slate-200/80 flex-1 max-w-xl text-xs"
+            className="w-full sm:w-auto flex flex-col xs:flex-row items-stretch sm:items-center gap-2 bg-slate-50/90 p-2 sm:p-1.5 rounded-xl border border-slate-200/90 flex-1 max-w-xl text-xs"
           >
-            <div className="flex items-center gap-1.5 flex-1 min-w-[130px]">
-              <span className="text-[11px] font-semibold text-slate-500 whitespace-nowrap pl-1">Từ:</span>
-              <input
-                type="date"
-                value={tempFrom}
-                onChange={e => setTempFrom(e.target.value)}
-                className="w-full px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-800 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-                title="Chọn ngày bắt đầu tìm kiếm"
-              />
-            </div>
+            <div className="grid grid-cols-2 gap-2 flex-1 w-full">
+              <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-2 py-1 focus-within:border-emerald-500 focus-within:ring-1 focus-within:ring-emerald-500 transition-all">
+                <span className="text-[11px] font-bold text-slate-500 whitespace-nowrap">Từ:</span>
+                <input
+                  type="date"
+                  value={tempFrom}
+                  onChange={e => setTempFrom(e.target.value)}
+                  className="w-full bg-transparent border-0 p-0 text-xs font-semibold text-slate-800 outline-none focus:ring-0 cursor-pointer min-w-0"
+                  title="Chọn ngày bắt đầu tìm kiếm"
+                />
+              </div>
 
-            <div className="flex items-center gap-1.5 flex-1 min-w-[130px]">
-              <span className="text-[11px] font-semibold text-slate-500 whitespace-nowrap">Đến:</span>
-              <input
-                type="date"
-                value={tempTo}
-                onChange={e => setTempTo(e.target.value)}
-                className="w-full px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-800 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-                title="Chọn ngày kết thúc tìm kiếm"
-              />
+              <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-2 py-1 focus-within:border-emerald-500 focus-within:ring-1 focus-within:ring-emerald-500 transition-all">
+                <span className="text-[11px] font-bold text-slate-500 whitespace-nowrap">Đến:</span>
+                <input
+                  type="date"
+                  value={tempTo}
+                  onChange={e => setTempTo(e.target.value)}
+                  className="w-full bg-transparent border-0 p-0 text-xs font-semibold text-slate-800 outline-none focus:ring-0 cursor-pointer min-w-0"
+                  title="Chọn ngày kết thúc tìm kiếm"
+                />
+              </div>
             </div>
 
             <button
               type="submit"
-              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg text-xs transition-colors flex items-center gap-1 shadow-2xs whitespace-nowrap flex-shrink-0"
+              className="w-full xs:w-auto px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-xs transition-colors flex items-center justify-center gap-1.5 shadow-2xs whitespace-nowrap flex-shrink-0 cursor-pointer"
               title="Tìm kiếm dữ liệu theo khoảng ngày đã chọn"
             >
               <Search className="w-3.5 h-3.5" />

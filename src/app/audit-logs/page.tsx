@@ -109,8 +109,8 @@ export default function AuditLogsPage() {
       <DatePeriodFilter />
 
       {/* Filter Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3 text-xs">
-        <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 w-full flex-1">
           <div className="relative w-full sm:w-64">
             <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
@@ -122,37 +122,39 @@ export default function AuditLogsPage() {
             />
           </div>
 
-          <select
-            value={actionFilter}
-            onChange={e => setActionFilter(e.target.value)}
-            className="p-1.5 bg-slate-50 border border-slate-200 rounded-lg outline-none font-medium text-slate-700"
-          >
-            <option value="ALL">-- Tất cả hành động --</option>
-            <option value="CREATE">Tạo mới</option>
-            <option value="UPDATE">Cập nhật</option>
-            <option value="TRANSFER">Chuyển giao khách</option>
-            <option value="STAGE_CHANGE">Đổi giai đoạn Deal</option>
-            <option value="DELETE">Xóa</option>
-            <option value="IMPORT">Import Excel</option>
-            <option value="EXPORT">Xuất file</option>
-          </select>
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center w-full sm:w-auto">
+            <select
+              value={actionFilter}
+              onChange={e => setActionFilter(e.target.value)}
+              className="w-full sm:w-auto p-1.5 bg-slate-50 border border-slate-200 rounded-lg outline-none font-medium text-slate-700"
+            >
+              <option value="ALL">-- Tất cả hành động --</option>
+              <option value="CREATE">Tạo mới</option>
+              <option value="UPDATE">Cập nhật</option>
+              <option value="TRANSFER">Chuyển giao khách</option>
+              <option value="STAGE_CHANGE">Đổi giai đoạn Deal</option>
+              <option value="DELETE">Xóa</option>
+              <option value="IMPORT">Import Excel</option>
+              <option value="EXPORT">Xuất file</option>
+            </select>
 
-          <select
-            value={entityFilter}
-            onChange={e => setEntityFilter(e.target.value)}
-            className="p-1.5 bg-slate-50 border border-slate-200 rounded-lg outline-none font-medium text-slate-700"
-          >
-            <option value="ALL">-- Tất cả phân hệ --</option>
-            <option value="LEAD">Khách hàng / Lead</option>
-            <option value="DEAL">Cơ hội bán hàng</option>
-            <option value="ORDER">Đơn hàng</option>
-            <option value="TASK">Công việc &amp; Lịch hẹn</option>
-            <option value="USER">Nhân viên / User</option>
-            <option value="SETTINGS">Cấu hình hệ thống</option>
-          </select>
+            <select
+              value={entityFilter}
+              onChange={e => setEntityFilter(e.target.value)}
+              className="w-full sm:w-auto p-1.5 bg-slate-50 border border-slate-200 rounded-lg outline-none font-medium text-slate-700"
+            >
+              <option value="ALL">-- Tất cả phân hệ --</option>
+              <option value="LEAD">Khách hàng / Lead</option>
+              <option value="DEAL">Cơ hội bán hàng</option>
+              <option value="ORDER">Đơn hàng</option>
+              <option value="TASK">Công việc &amp; Lịch hẹn</option>
+              <option value="USER">Nhân viên / User</option>
+              <option value="SETTINGS">Cấu hình hệ thống</option>
+            </select>
+          </div>
         </div>
 
-        <div className="text-[11px] text-slate-500">
+        <div className="text-[11px] text-slate-500 whitespace-nowrap self-end md:self-auto">
           Tổng số <strong>{filteredLogs.length}</strong> bản ghi
         </div>
       </div>
