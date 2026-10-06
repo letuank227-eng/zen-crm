@@ -415,13 +415,6 @@ export default function CreateLeadModal({
                 <Leaf className="w-3.5 h-3.5 text-emerald-600" />
                 <span>Sản Phẩm Khách Mua ({selectedItems.length})</span>
               </div>
-              <button
-                type="button"
-                onClick={() => setShowCustomItemInput(prev => !prev)}
-                className="text-emerald-700 hover:text-emerald-800 font-semibold text-[11px] flex items-center gap-1 hover:underline cursor-pointer"
-              >
-                <span>Thêm món tự nhập</span>
-              </button>
             </div>
 
             {/* Ô tìm kiếm sản phẩm thông minh & Dropdown danh sách mệnh giá */}
@@ -517,49 +510,6 @@ export default function CreateLeadModal({
                 </>
               )}
             </div>
-
-            {/* Input thêm sản phẩm tùy chỉnh nếu cần */}
-            {showCustomItemInput && (
-              <div className="p-2.5 bg-emerald-50/60 border border-emerald-200 rounded-xl space-y-2 animate-in fade-in-50">
-                <div className="font-bold text-emerald-900 text-[11px]">Nhập sản phẩm hoặc dịch vụ tùy chỉnh:</div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  <div className="sm:col-span-2">
-                    <input
-                      type="text"
-                      value={customItemName}
-                      onChange={e => setCustomItemName(e.target.value)}
-                      placeholder="Tên cây, lũa, đá hoặc dịch vụ setup riêng..."
-                      className="w-full p-1.5 bg-white border border-emerald-200 rounded-lg outline-none text-xs"
-                    />
-                  </div>
-                  <div>
-                    <input
-                      type="number"
-                      value={customItemPrice}
-                      onChange={e => setCustomItemPrice(e.target.value)}
-                      placeholder="Đơn giá (₫)..."
-                      className="w-full p-1.5 bg-white border border-emerald-200 rounded-lg outline-none text-xs"
-                    />
-                  </div>
-                </div>
-                <div className="flex justify-end gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => setShowCustomItemInput(false)}
-                    className="px-2 py-1 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded text-[11px]"
-                  >
-                    Hủy
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleAddCustomItem}
-                    className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded font-bold text-[11px]"
-                  >
-                    Thêm vào đơn
-                  </button>
-                </div>
-              </div>
-            )}
 
             {/* Danh sách các sản phẩm đã chọn */}
             {selectedItems.length > 0 ? (
