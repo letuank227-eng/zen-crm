@@ -66,7 +66,7 @@ export default function ServerBackupManager() {
   // Restore Modal State
   const [restoreModalOpen, setRestoreModalOpen] = useState(false);
   const [targetRestore, setTargetRestore] = useState<{
-    type: 'snapshot' | 'file';
+    type: 'snapshot' | 'file' | 'products_only';
     snapshotId?: string;
     fileData?: any;
     label: string;
@@ -239,10 +239,14 @@ export default function ServerBackupManager() {
     if (!targetRestore || restoring) return;
     try {
       setRestoring(true);
-      const payload =
-        targetRestore.type === 'snapshot'
-          ? { snapshotId: targetRestore.snapshotId }
-          : { data: targetRestore.fileData };
+      let payload: any = {};
+      if (targetRestore.type === 'products_only') {
+        payload = { restoreProductsOnly: true };
+      } else if (targetRestore.type === 'snapshot') {
+        payload = { snapshotId: targetRestore.snapshotId };
+      } else {
+        payload = { data: targetRestore.fileData };
+      }
 
       const res = await fetchWithAuth('/api/settings/restore', {
         method: 'POST',
@@ -473,6 +477,20 @@ export default function ServerBackupManager() {
             >
               <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
               <span>Xuất Báo Cáo Excel (.XLSX)</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setTargetRestore({
+                  type: 'products_only',
+                  label: 'Khôi phục danh mục 86 Sản phẩm gốc từ máy chủ (Kèm 100% hình ảnh Base64, mã SKU, giá bán, hoa hồng)',
+                });
+                setRestoreModalOpen(true);
+              }}
+              className="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+            >
+              <RotateCcw className="w-3.5 h-3.5 text-amber-600" />
+              <span>Khôi Phục 86 SP Máy Chủ</span>
             </button>
 
             <button

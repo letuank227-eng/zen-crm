@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   getCurrentUser,
   logAuditEvent,
+  readDb,
+  writeDb,
   restoreDb,
   restoreFromServerSnapshot,
   createServerSnapshot,
@@ -21,7 +23,39 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { snapshotId, data } = body;
+    const { snapshotId, data, restoreProductsOnly } = body;
+
+    if (restoreProductsOnly) {
+      const fs = await import('fs');
+      const path = await import('path');
+      const backupPath = path.join(process.cwd(), 'data', 'backups', 'products_backup_latest.json');
+      if (!fs.existsSync(backupPath)) {
+        return NextResponse.json({ error: 'Không tìm thấy tệp sao lưu sản phẩm máy chủ.' }, { status: 404 });
+      }
+      const backupRaw = JSON.parse(fs.readFileSync(backupPath, 'utf-8'));
+      const products = backupRaw.products;
+      const categories = backupRaw.categories;
+
+      const currentDb = await readDb();
+      await createServerSnapshot(user.name || user.email, 'Lưu dự phòng trước khi khôi phục danh mục sản phẩm');
+      currentDb.products = products;
+      if (categories && categories.length > 0) {
+        currentDb.productCategories = categories;
+      }
+      await writeDb(currentDb);
+      await logAuditEvent(
+        user.id,
+        user.name,
+        'UPDATE',
+        'SETTINGS',
+        'restore_products',
+        `Khôi phục ${products.length} sản phẩm và ${categories ? categories.length : 0} danh mục từ tệp sao lưu máy chủ`
+      );
+      return NextResponse.json({
+        success: true,
+        message: `Đã khôi phục thành công ${products.length} sản phẩm đầy đủ hình ảnh và thông số từ máy chủ!`,
+      });
+    }
 
     if (snapshotId) {
       await restoreFromServerSnapshot(snapshotId);
