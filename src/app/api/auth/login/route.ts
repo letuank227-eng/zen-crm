@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Vui lòng nhập mật khẩu' }, { status: 400 });
     }
 
-    const db = await readDb();
+    const db = await readDb({ includeProducts: false });
     const lowerInput = loginInput.toLowerCase();
     const rawLower = rawInput.toLowerCase();
     const user = db.users.find(

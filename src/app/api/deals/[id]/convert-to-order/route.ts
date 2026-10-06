@@ -7,7 +7,7 @@ import { notifyNewOrder } from '@/lib/push';
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   const userId = request.headers.get('x-user-id') || undefined;
   const user = await getCurrentUser(userId);
-  const db = await readDb();
+  const db = await readDb({ includeProducts: false });
 
   const deal = db.deals.find(d => d.id === params.id);
   if (!deal) {

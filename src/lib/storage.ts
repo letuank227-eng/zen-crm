@@ -167,7 +167,7 @@ interface MemoryCache {
   expiresAt: number;
 }
 let memoryCache: MemoryCache | null = null;
-const BURST_CACHE_TTL_MS = 12000;
+const BURST_CACHE_TTL_MS = 60000; // 60 seconds fast in-memory cache
 
 async function tursoRead(options?: { includeProducts?: boolean }): Promise<CrmDatabase> {
   const includeProducts = options?.includeProducts ?? true;

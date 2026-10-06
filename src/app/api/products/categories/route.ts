@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { readDb, writeDb, getCurrentUser, logAuditEvent } from '@/lib/db';
 
 export async function GET() {
-  const db = await readDb();
+  const db = await readDb({ includeProducts: false });
   const categoriesSet = new Set<string>(db.productCategories || [
     'Ráy & Dương Xỉ',
     'Bucephalandra & Tiêu Thảo',
@@ -11,10 +11,6 @@ export async function GET() {
     'Rêu Thủy Sinh (Moss)',
     'Setup Hồ Trọn Gói & Bảo Dưỡng',
   ]);
-
-  db.products.forEach(p => {
-    if (p.category) categoriesSet.add(p.category);
-  });
 
   return NextResponse.json({
     categories: Array.from(categoriesSet),

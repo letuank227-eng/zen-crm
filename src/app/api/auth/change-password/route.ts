@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const db = await readDb();
+    const db = await readDb({ includeProducts: false });
     const user = db.users.find(u => u.id === userId);
     if (!user) {
       return NextResponse.json({ error: 'Không tìm thấy người dùng' }, { status: 404 });
