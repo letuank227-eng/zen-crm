@@ -1,10 +1,19 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
 import { DateFilterProvider } from '@/context/DateFilterContext';
 import { SidebarProvider } from '@/context/SidebarContext';
 import { PwaProvider } from '@/context/PwaInstallContext';
 import AppShell from '@/components/layout/AppShell';
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover',
+  themeColor: '#065f46',
+};
 
 export const metadata: Metadata = {
   title: 'ZEN CRM - Hệ Thống Quản Trị Khách Hàng & Bán Hàng Toàn Diện',
@@ -24,6 +33,10 @@ export default function RootLayout({
   return (
     <html lang="vi">
       <head>
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+        />
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#065f46" />
         <meta name="mobile-web-app-capable" content="yes" />
@@ -49,11 +62,16 @@ export default function RootLayout({
                   });
                 });
               }
+
+              // Khóa hoàn toàn phóng to / thu nhỏ (Pinch-to-zoom) trên iOS & Android
+              document.addEventListener('gesturestart', function(e) { e.preventDefault(); }, { passive: false });
+              document.addEventListener('gesturechange', function(e) { e.preventDefault(); }, { passive: false });
+              document.addEventListener('gestureend', function(e) { e.preventDefault(); }, { passive: false });
             `,
           }}
         />
       </head>
-      <body className="antialiased min-h-screen flex flex-col bg-slate-50 text-slate-900 selection:bg-emerald-100 selection:text-emerald-900">
+      <body className="antialiased min-h-screen flex flex-col bg-slate-50 text-slate-900 selection:bg-emerald-100 selection:text-emerald-900 w-full overflow-x-hidden touch-manipulation">
         <PwaProvider>
           <AuthProvider>
             <DateFilterProvider>

@@ -65,12 +65,46 @@
   --background-rgb: 248, 250, 252;
 }
 
+html {
+  touch-action: pan-x pan-y;
+  -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  overscroll-behavior: none;
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
+}
+
 body {
   color: rgb(var(--foreground-rgb));
   background-color: rgb(var(--background-rgb));
   font-family: 'Futura-Numbers', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   -webkit-tap-highlight-color: transparent;
   font-feature-settings: "cv01" 1, "tnum" 1;
+  touch-action: pan-x pan-y;
+  -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  overscroll-behavior: none;
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
+  position: relative;
+}
+
+/* Khóa cử chỉ double-tap zoom trên các phần tử tương tác */
+button, a, input, select, textarea {
+  touch-action: manipulation;
+}
+
+/* Ngăn iOS Safari tự động phóng to trang khi ấn vào ô nhập liệu (yêu cầu font >= 16px) */
+@media screen and (max-width: 768px) {
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
 }
 
 .font-futura,
