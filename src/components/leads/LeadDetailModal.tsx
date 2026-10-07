@@ -277,7 +277,12 @@ export default function LeadDetailModal({
   if (!lead) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center sm:p-4 animate-in fade-in duration-150">
+    <div 
+      className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center sm:p-4 animate-in fade-in duration-150"
+      onClick={e => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
       <div className="w-full sm:max-w-4xl md:max-w-5xl bg-white h-full sm:h-[92vh] sm:rounded-2xl shadow-2xl flex flex-col border border-slate-200 overflow-hidden">
         {/* 1. CLEAN MODERN HEADER */}
         <div className="bg-white border-b border-slate-200 px-4 sm:px-6 py-3 flex items-center justify-between gap-3 flex-shrink-0">
@@ -1074,7 +1079,12 @@ export default function LeadDetailModal({
 
         {/* Quick Log Interaction Modal */}
         {showLogModal && (
-          <div className="fixed inset-0 z-60 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div 
+            className="fixed inset-0 z-60 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
+            onClick={e => {
+              if (e.target === e.currentTarget) setShowLogModal(false);
+            }}
+          >
             <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 animate-in zoom-in-95 my-auto flex flex-col max-h-[92vh] overflow-hidden">
               <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 flex-shrink-0 bg-white">
                 <span className="font-bold text-sm text-slate-800 flex items-center gap-1.5">

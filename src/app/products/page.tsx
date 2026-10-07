@@ -445,7 +445,12 @@ export default function ProductsPage() {
 
       {/* MODAL 1: THÊM / SỬA / XEM CHI TIẾT SẢN PHẨM */}
       {showProductModal && (
-        <div className="fixed inset-0 z-[100] bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-2.5 sm:p-4 overflow-y-auto">
+        <div 
+          className="fixed inset-0 z-[100] bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-2.5 sm:p-4 overflow-y-auto"
+          onClick={e => {
+            if (e.target === e.currentTarget) setShowProductModal(false);
+          }}
+        >
           <div className="bg-white rounded-2xl sm:rounded-3xl max-w-lg w-full shadow-2xl border border-slate-200 text-xs animate-in zoom-in-95 my-auto flex flex-col max-h-[92vh] sm:max-h-[90vh] overflow-hidden">
             <div className="flex items-center justify-between px-5 py-3.5 sm:px-6 sm:py-4 border-b border-slate-100 flex-shrink-0 bg-white">
               <div className="flex items-center gap-2">

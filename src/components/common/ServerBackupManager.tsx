@@ -606,7 +606,15 @@ export default function ServerBackupManager() {
 
       {/* Confirmation Modal for Restore */}
       {restoreModalOpen && targetRestore && (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+        <div 
+          className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200"
+          onClick={e => {
+            if (e.target === e.currentTarget) {
+              setRestoreModalOpen(false);
+              setTargetRestore(null);
+            }
+          }}
+        >
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between">
               <div className="w-10 h-10 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center">

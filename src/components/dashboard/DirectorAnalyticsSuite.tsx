@@ -58,13 +58,24 @@ export default function DirectorAnalyticsSuite() {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
+    function handleClickOutside(event: MouseEvent | TouchEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setShowPeriodDropdown(false);
       }
     }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setShowPeriodDropdown(false);
+      }
+    }
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
   }, []);
 
   const fetchAnalytics = async () => {
@@ -158,37 +169,44 @@ export default function DirectorAnalyticsSuite() {
 
             {/* Dropdown Menu */}
             {showPeriodDropdown && (
-              <div className="absolute right-0 mt-2 w-60 rounded-2xl bg-white border border-slate-200 shadow-xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
-                <div className="px-3 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 mb-1">
-                  Chọn kỳ báo cáo so sánh
+              <>
+                <div
+                  className="fixed inset-0 z-40 bg-transparent"
+                  onClick={() => setShowPeriodDropdown(false)}
+                  aria-hidden="true"
+                />
+                <div className="absolute right-0 mt-2 w-60 rounded-2xl bg-white border border-slate-200 shadow-xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
+                  <div className="px-3 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 mb-1">
+                    Chọn kỳ báo cáo so sánh
+                  </div>
+                  {periodsList.map((p) => {
+                    const isActive = period === p.id;
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => {
+                          setPeriod(p.id);
+                          setShowPeriodDropdown(false);
+                        }}
+                        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all text-left cursor-pointer ${
+                          isActive
+                            ? 'bg-emerald-600 text-white font-bold shadow-xs'
+                            : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'
+                        }`}
+                      >
+                        <div className="flex flex-col">
+                          <span className="font-bold">{p.label}</span>
+                          <span className={`text-[10px] ${isActive ? 'text-emerald-100' : 'text-slate-400'}`}>
+                            {p.desc}
+                          </span>
+                        </div>
+                        {isActive && <Check className="w-4 h-4 text-white flex-shrink-0 ml-2" />}
+                      </button>
+                    );
+                  })}
                 </div>
-                {periodsList.map((p) => {
-                  const isActive = period === p.id;
-                  return (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => {
-                        setPeriod(p.id);
-                        setShowPeriodDropdown(false);
-                      }}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all text-left cursor-pointer ${
-                        isActive
-                          ? 'bg-emerald-600 text-white font-bold shadow-xs'
-                          : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'
-                      }`}
-                    >
-                      <div className="flex flex-col">
-                        <span className="font-bold">{p.label}</span>
-                        <span className={`text-[10px] ${isActive ? 'text-emerald-100' : 'text-slate-400'}`}>
-                          {p.desc}
-                        </span>
-                      </div>
-                      {isActive && <Check className="w-4 h-4 text-white flex-shrink-0 ml-2" />}
-                    </button>
-                  );
-                })}
-              </div>
+              </>
             )}
           </div>
         </div>

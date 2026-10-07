@@ -496,7 +496,12 @@ export default function TeamPage() {
 
       {/* Modal: Edit KPI Target */}
       {editingUser && (
-        <div className="fixed inset-0 z-60 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+        <div 
+          className="fixed inset-0 z-60 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
+          onClick={e => {
+            if (e.target === e.currentTarget) setEditingUser(null);
+          }}
+        >
           <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 text-xs animate-in zoom-in-95 my-auto flex flex-col max-h-[92vh] overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 flex-shrink-0 bg-white">
               <span className="font-bold text-sm text-slate-800">Cập Nhật Nhân Sự & KPI: {editingUser.name}</span>
@@ -589,7 +594,12 @@ export default function TeamPage() {
 
       {/* Modal: Add User */}
       {showAddUserModal && (
-        <div className="fixed inset-0 z-60 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+        <div 
+          className="fixed inset-0 z-60 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
+          onClick={e => {
+            if (e.target === e.currentTarget) setShowAddUserModal(false);
+          }}
+        >
           <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 text-xs animate-in zoom-in-95 my-auto flex flex-col max-h-[92vh] overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 flex-shrink-0 bg-white">
               <span className="font-bold text-sm text-slate-800">Tạo Tài Khoản Nhân Viên Mới</span>

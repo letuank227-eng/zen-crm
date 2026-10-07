@@ -372,7 +372,12 @@ export default function ProductCardGeneratorModal({
   };
 
   return (
-    <div className="fixed inset-0 z-70 bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+    <div 
+      className="fixed inset-0 z-70 bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 overflow-y-auto"
+      onClick={e => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
       <div className="bg-slate-900 border border-slate-800 rounded-2xl sm:rounded-3xl max-w-5xl w-full p-4 sm:p-6 shadow-2xl space-y-4 sm:space-y-6 text-xs text-slate-200 animate-in zoom-in-95 my-auto max-h-[95vh] overflow-y-auto">
         {/* Modal Header */}
         <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-slate-800">

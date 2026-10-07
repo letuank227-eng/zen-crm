@@ -829,7 +829,12 @@ export default function SettingsPage() {
 
       {/* Modal chỉnh sửa nhóm kinh doanh */}
       {editingTeam && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+        <div 
+          className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
+          onClick={e => {
+            if (e.target === e.currentTarget) setEditingTeam(null);
+          }}
+        >
           <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 text-xs animate-in zoom-in-95 my-auto flex flex-col max-h-[92vh] overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 flex-shrink-0 bg-white">
               <span className="font-bold text-sm text-slate-800 flex items-center gap-2">

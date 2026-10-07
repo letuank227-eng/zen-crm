@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useSidebar } from '@/context/SidebarContext';
@@ -54,6 +54,10 @@ export default function Header() {
   const [unreadNotifCount, setUnreadNotifCount] = useState<number>(0);
   const [notifTab, setNotifTab] = useState<'ORDERS' | 'TASKS'>('ORDERS');
   const [searchQuery, setSearchQuery] = useState('');
+
+  const createMenuRef = useRef<HTMLDivElement>(null);
+  const notifRef = useRef<HTMLDivElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
   const fetchNotifications = async () => {
     if (!currentUser) return;
@@ -115,6 +119,42 @@ export default function Header() {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [currentUser]);
+
+  // Đóng bảng thông báo, menu tạo nhanh, menu người dùng khi click/tap ra ngoài ô hoặc nhấn phím ESC
+  useEffect(() => {
+    if (!showNotifications && !showCreateMenu && !showUserMenu) return;
+
+    function handleClickOutside(event: MouseEvent | TouchEvent) {
+      const target = event.target as Node;
+      if (showNotifications && notifRef.current && !notifRef.current.contains(target)) {
+        setShowNotifications(false);
+      }
+      if (showCreateMenu && createMenuRef.current && !createMenuRef.current.contains(target)) {
+        setShowCreateMenu(false);
+      }
+      if (showUserMenu && userMenuRef.current && !userMenuRef.current.contains(target)) {
+        setShowUserMenu(false);
+      }
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setShowNotifications(false);
+        setShowCreateMenu(false);
+        setShowUserMenu(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showNotifications, showCreateMenu, showUserMenu]);
 
   const handleMarkAllRead = async () => {
     try {
@@ -202,7 +242,7 @@ export default function Header() {
       {/* Right Actions */}
       <div className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
         {/* Quick Create Dropdown */}
-        <div className="relative">
+        <div className="relative" ref={createMenuRef}>
           <button
             onClick={() => setShowCreateMenu(!showCreateMenu)}
             className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors"
@@ -211,7 +251,13 @@ export default function Header() {
           </button>
 
           {showCreateMenu && (
-            <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-100 py-1 z-50 animate-in fade-in slide-in-from-top-2">
+            <>
+              <div
+                className="fixed inset-0 z-40 bg-black/10 sm:bg-transparent"
+                onClick={() => setShowCreateMenu(false)}
+                aria-hidden="true"
+              />
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-100 py-1 z-50 animate-in fade-in slide-in-from-top-2">
               <button
                 onClick={() => {
                   setShowCreateMenu(false);
@@ -233,7 +279,8 @@ export default function Header() {
                 <span>Lên Lịch Hẹn / Task</span>
               </button>
             </div>
-          )}
+          </>
+        )}
         </div>
 
         {/* Install Mobile App Button */}
@@ -247,7 +294,7 @@ export default function Header() {
         </button>
 
         {/* Notifications Popover */}
-        <div className="relative">
+        <div className="relative" ref={notifRef}>
           <button
             onClick={() => {
               setShowNotifications(!showNotifications);
@@ -267,7 +314,14 @@ export default function Header() {
           </button>
 
           {showNotifications && (
-            <div className="absolute right-0 mt-2 w-[calc(100vw-2rem)] sm:w-96 max-w-sm bg-white rounded-2xl shadow-xl border border-slate-200 p-3 z-50 animate-in fade-in slide-in-from-top-2">
+            <>
+              {/* Lớp nền trong suốt/mờ nhẹ phủ toàn màn hình: Bấm ra ngoài là tự biến mất ngay */}
+              <div
+                className="fixed inset-0 z-40 bg-black/20 sm:bg-transparent"
+                onClick={() => setShowNotifications(false)}
+                aria-hidden="true"
+              />
+              <div className="absolute right-0 mt-2 w-[calc(100vw-2rem)] sm:w-96 max-w-sm bg-white rounded-2xl shadow-2xl border border-slate-200 p-3 z-50 animate-in fade-in slide-in-from-top-2">
               <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100">
                 <span className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
                   <Bell className="w-3.5 h-3.5 text-emerald-600" />
@@ -404,12 +458,13 @@ export default function Header() {
                 <PushNotificationManager compact />
               </div>
             </div>
-          )}
+          </>
+        )}
         </div>
 
         {/* User Role Badge & Switcher */}
         <div className="h-6 w-px bg-slate-200 mx-0.5 sm:mx-1" />
-        <div className="relative">
+        <div className="relative" ref={userMenuRef}>
           <button
             onClick={() => setShowUserMenu(!showUserMenu)}
             className="flex items-center gap-1.5 sm:gap-2 p-1 sm:p-1.5 rounded-xl hover:bg-slate-100 transition-colors text-left"
@@ -437,7 +492,14 @@ export default function Header() {
 
           {/* User & Role Switch Dropdown */}
           {showUserMenu && (
-            <div className="absolute right-0 mt-2 w-[calc(100vw-2rem)] sm:w-80 max-w-sm bg-white rounded-2xl shadow-xl border border-slate-200 p-2 z-50 animate-in fade-in zoom-in-95">
+            <>
+              {/* Lớp nền trong suốt/mờ nhẹ phủ toàn màn hình: Bấm ra ngoài là tự biến mất ngay */}
+              <div
+                className="fixed inset-0 z-40 bg-black/20 sm:bg-transparent"
+                onClick={() => setShowUserMenu(false)}
+                aria-hidden="true"
+              />
+              <div className="absolute right-0 mt-2 w-[calc(100vw-2rem)] sm:w-80 max-w-sm bg-white rounded-2xl shadow-xl border border-slate-200 p-2 z-50 animate-in fade-in zoom-in-95">
               {/* Current User Info */}
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 mb-2">
                 <div className="flex items-center gap-2 mb-2">
@@ -478,13 +540,19 @@ export default function Header() {
               </div>
 
             </div>
-          )}
+          </>
+        )}
         </div>
       </div>
 
       {/* Change Password Modal */}
       {showChangePassModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+        <div 
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200"
+          onClick={e => {
+            if (e.target === e.currentTarget) setShowChangePassModal(false);
+          }}
+        >
           <div className="bg-white rounded-2xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-100 relative">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
               <div className="flex items-center gap-2">
