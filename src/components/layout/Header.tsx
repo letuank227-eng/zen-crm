@@ -52,12 +52,23 @@ export default function Header() {
   const [overdueTasks, setOverdueTasks] = useState<Task[]>([]);
   const [notifications, setNotifications] = useState<UserNotification[]>([]);
   const [unreadNotifCount, setUnreadNotifCount] = useState<number>(0);
+  const [lastSeenNotifTime, setLastSeenNotifTime] = useState<string | null>(null);
   const [notifTab, setNotifTab] = useState<'ORDERS' | 'TASKS'>('ORDERS');
   const [searchQuery, setSearchQuery] = useState('');
 
   const createMenuRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
+
+  // Lấy thời điểm xem thông báo gần nhất từ localStorage theo tài khoản
+  useEffect(() => {
+    if (typeof window !== 'undefined' && currentUser?.id) {
+      const saved = localStorage.getItem(`zen_notif_seen_${currentUser.id}`);
+      if (saved) {
+        setLastSeenNotifTime(saved);
+      }
+    }
+  }, [currentUser?.id]);
 
   const fetchNotifications = async () => {
     if (!currentUser) return;
@@ -166,6 +177,11 @@ export default function Header() {
       if (res.ok) {
         setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
         setUnreadNotifCount(0);
+        const now = new Date().toISOString();
+        setLastSeenNotifTime(now);
+        if (currentUser?.id && typeof window !== 'undefined') {
+          localStorage.setItem(`zen_notif_seen_${currentUser.id}`, now);
+        }
       }
     } catch (err) {
       console.error('Failed to mark read:', err);
@@ -190,6 +206,24 @@ export default function Header() {
     router.push('/orders');
   };
 
+  // Đếm các thông báo MỚI (chưa đọc VÀ phát sinh sau thời điểm bấm xem gần nhất)
+  const newNotifCount = notifications.filter(n => {
+    if (n.isRead) return false;
+    if (!lastSeenNotifTime) return true;
+    const notifTime = new Date(n.createdAt).getTime();
+    const seenTime = new Date(lastSeenNotifTime).getTime();
+    return !isNaN(notifTime) && !isNaN(seenTime) ? notifTime > seenTime : false;
+  }).length;
+
+  const newOverdueCount = overdueTasks.filter(t => {
+    if (!lastSeenNotifTime) return true;
+    const taskTime = new Date(t.createdAt || t.dueDate).getTime();
+    const seenTime = new Date(lastSeenNotifTime).getTime();
+    return !isNaN(taskTime) && !isNaN(seenTime) ? taskTime > seenTime : false;
+  }).length;
+
+  // Con số đỏ trên chuông: CHỈ hiện khi có thông báo mới sau lần bấm xem gần nhất
+  const unreadBadgeCount = newNotifCount + newOverdueCount;
   const totalAlerts = overdueTasks.length + unreadNotifCount;
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -300,18 +334,27 @@ export default function Header() {
         <div className="relative" ref={notifRef}>
           <button
             onClick={() => {
-              setShowNotifications(!showNotifications);
-              fetchNotifications();
-              fetchAlerts();
+              const willOpen = !showNotifications;
+              setShowNotifications(willOpen);
+              // Bấm vào chuông: lập tức ghi nhận thời điểm xem và xóa số đỏ trên chuông
+              const now = new Date().toISOString();
+              setLastSeenNotifTime(now);
+              if (currentUser?.id && typeof window !== 'undefined') {
+                localStorage.setItem(`zen_notif_seen_${currentUser.id}`, now);
+              }
+              if (willOpen) {
+                fetchNotifications();
+                fetchAlerts();
+              }
             }}
             className="p-2 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100 relative transition-colors"
             title="Thông báo đơn hàng & Cảnh báo công việc"
             aria-label="Thông báo đơn hàng & Cảnh báo công việc"
           >
             <Bell className="w-4 h-4" />
-            {totalAlerts > 0 && (
+            {unreadBadgeCount > 0 && (
               <span className="absolute top-1 right-1 w-4 h-4 bg-rose-500 text-white rounded-full text-[9px] font-bold flex items-center justify-center animate-pulse">
-                {totalAlerts}
+                {unreadBadgeCount > 99 ? '99+' : unreadBadgeCount}
               </span>
             )}
           </button>
@@ -328,7 +371,12 @@ export default function Header() {
               <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100 flex-shrink-0">
                 <span className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
                   <Bell className="w-3.5 h-3.5 text-emerald-600" />
-                  Trung Tâm Thông Báo ({totalAlerts})
+                  <span>Trung Tâm Thông Báo</span>
+                  {unreadNotifCount > 0 && (
+                    <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-full border border-emerald-200">
+                      {unreadNotifCount} chưa đọc
+                    </span>
+                  )}
                 </span>
                 <button
                   onClick={() => setShowNotifications(false)}
