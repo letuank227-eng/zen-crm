@@ -175,7 +175,7 @@ export default function DirectorAnalyticsSuite() {
                   onClick={() => setShowPeriodDropdown(false)}
                   aria-hidden="true"
                 />
-                <div className="absolute right-0 mt-2 w-60 rounded-2xl bg-white border border-slate-200 shadow-xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
+                <div className="absolute left-0 lg:left-auto lg:right-0 mt-2 w-60 rounded-2xl bg-white border border-slate-200 shadow-xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
                   <div className="px-3 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 mb-1">
                     Chọn kỳ báo cáo so sánh
                   </div>
