@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { Order, User, Lead } from '@/types/crm';
+import SaleProductivityDetail from './SaleProductivityDetail';
 
 interface SalesManagerDashboardProps {
   reportData: any;
@@ -36,6 +37,9 @@ export default function SalesManagerDashboard({ reportData }: SalesManagerDashbo
   const [isLoading, setIsLoading] = useState(true);
   const [approvedOrderIds, setApprovedOrderIds] = useState<string[]>([]);
   const [rejectedOrderIds, setRejectedOrderIds] = useState<string[]>([]);
+  const [managerDrilldowns, setManagerDrilldowns] = useState<Record<string, any>>({});
+  const [selectedRepId, setSelectedRepId] = useState<string | null>(null);
+  const [isLoadingAnalytics, setIsLoadingAnalytics] = useState(true);
 
   useEffect(() => {
     const loadManagerData = async () => {
@@ -56,6 +60,28 @@ export default function SalesManagerDashboard({ reportData }: SalesManagerDashbo
         // Tải danh sách Sales Reps từ reports leaderboard
         if (reportData?.salesLeaderboard) {
           setSalesReps(reportData.salesLeaderboard);
+        }
+
+        // Tải số liệu phân tích chuyên sâu & hoa hồng từng bạn từ director-analytics
+        try {
+          setIsLoadingAnalytics(true);
+          const analyticsRes = await fetchWithAuth('/api/director-analytics?period=MONTH');
+          if (analyticsRes.ok) {
+            const analyticsJson = await analyticsRes.json();
+            if (analyticsJson.saleDrilldowns) {
+              setManagerDrilldowns(analyticsJson.saleDrilldowns);
+              if (currentUser?.id && analyticsJson.saleDrilldowns[currentUser.id]) {
+                setSelectedRepId(currentUser.id);
+              } else {
+                const firstKey = Object.keys(analyticsJson.saleDrilldowns)[0];
+                if (firstKey) setSelectedRepId(firstKey);
+              }
+            }
+          }
+        } catch (analyticsErr) {
+          console.error('Failed to load manager analytics drilldowns:', analyticsErr);
+        } finally {
+          setIsLoadingAnalytics(false);
         }
       } catch (err) {
         console.error('Error loading manager data:', err);
@@ -81,6 +107,8 @@ export default function SalesManagerDashboard({ reportData }: SalesManagerDashbo
   const teamActualRevenue = salesReps.reduce((sum, s) => sum + (s.actualRevenue || 0), 0);
   const teamTargetRevenue = salesReps.reduce((sum, s) => sum + (s.targetRevenue || 0), 0) || 450000000;
   const teamKpiProgress = teamTargetRevenue > 0 ? Math.round((teamActualRevenue / teamTargetRevenue) * 100) : 86;
+  const teamTotalCommission = salesReps.reduce((sum, s) => sum + (s.totalCommission || 0), 0);
+  const myPersonalStats = salesReps.find(s => s.userId === currentUser?.id || s.isSelf);
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -119,8 +147,8 @@ export default function SalesManagerDashboard({ reportData }: SalesManagerDashbo
         </div>
       </div>
 
-      {/* 2. 3 Thẻ Chỉ Số KPI Đội Ngũ */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      {/* 2. 4 Thẻ Chỉ Số KPI Đội Ngũ & Hoa Hồng */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: Tiến độ KPI phòng */}
         <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-2">
           <div className="flex items-center justify-between text-xs font-bold text-slate-500 uppercase tracking-wider">
@@ -143,11 +171,36 @@ export default function SalesManagerDashboard({ reportData }: SalesManagerDashbo
           </div>
           <div className="text-[11px] text-slate-500 flex items-center justify-between pt-1">
             <span>Tăng trưởng: <strong className="text-emerald-700">+14.2% MoM</strong></span>
-            <span>Còn 6 ngày chốt số</span>
+            <span>Chỉ tiêu nhóm</span>
           </div>
         </div>
 
-        {/* Card 2: Tốc độ phản hồi SLA & Lead */}
+        {/* Card 2: Hoa Hồng Đội Ngũ & Cá Nhân Leader */}
+        <div className="bg-gradient-to-br from-amber-50/70 via-white to-amber-50/30 rounded-2xl border border-amber-200 p-5 shadow-xs space-y-2 hover:border-amber-400 transition-all">
+          <div className="flex items-center justify-between text-xs font-bold text-amber-900 uppercase tracking-wider">
+            <span>💰 Hoa Hồng Đội Ngũ</span>
+            <span className="text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-300 font-extrabold">
+              Đã Chốt
+            </span>
+          </div>
+          <div className="text-xl font-black text-amber-600 font-mono">
+            {formatCurrency(teamTotalCommission)}
+          </div>
+          <div className="w-full bg-amber-100/60 h-2 rounded-full overflow-hidden mt-1">
+            <div
+              className="bg-amber-500 h-full rounded-full transition-all duration-500"
+              style={{ width: '100%' }}
+            />
+          </div>
+          <div className="text-[11px] text-slate-600 flex items-center justify-between pt-1">
+            <span>Cá nhân {currentUser?.role === 'LEADER' ? 'Trưởng nhóm' : 'Bạn'}:</span>
+            <strong className="text-amber-700 font-mono font-bold">
+              +{formatCurrency(myPersonalStats?.totalCommission || 0)}
+            </strong>
+          </div>
+        </div>
+
+        {/* Card 3: Tốc độ phản hồi SLA & Lead */}
         <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-2">
           <div className="flex items-center justify-between text-xs font-bold text-slate-500 uppercase tracking-wider">
             <span>Hiệu Suất Tiếp Nhận Lead</span>
@@ -163,23 +216,26 @@ export default function SalesManagerDashboard({ reportData }: SalesManagerDashbo
             <div className="bg-blue-500 h-full rounded-full" style={{ width: '92%' }} />
           </div>
           <div className="text-[11px] text-slate-500 pt-1">
-            Tổng Lead phân bổ tháng: <strong className="text-slate-800 font-semibold">{reportData?.metrics?.totalLeads || 248} leads</strong>
+            Tổng Lead phân bổ: <strong className="text-slate-800 font-semibold">{reportData?.metrics?.totalLeads || 248} leads</strong>
           </div>
         </div>
 
-        {/* Card 3: Đơn hàng chờ duyệt */}
+        {/* Card 4: Đơn hàng chờ duyệt */}
         <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-2">
           <div className="flex items-center justify-between text-xs font-bold text-slate-500 uppercase tracking-wider">
-            <span>Đơn Hàng Chờ Phê Duyệt</span>
-            <span className="text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200 font-extrabold">
+            <span>Đơn Chờ Phê Duyệt</span>
+            <span className="text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200 font-extrabold">
               {pendingOrders.length} Đơn
             </span>
           </div>
           <div className="text-xl font-black text-slate-900 font-mono">
             {formatCurrency(pendingOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0))}
           </div>
-          <div className="text-[11px] text-slate-500 pt-3">
-            Cần quản lý xem xét chiết khấu đặc biệt trước khi xuất kho giao hàng.
+          <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden mt-1">
+            <div className="bg-rose-500 h-full rounded-full" style={{ width: pendingOrders.length > 0 ? '70%' : '0%' }} />
+          </div>
+          <div className="text-[11px] text-slate-500 pt-1">
+            Xem xét chiết khấu đặc biệt
           </div>
         </div>
       </div>
@@ -191,10 +247,10 @@ export default function SalesManagerDashboard({ reportData }: SalesManagerDashbo
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <div>
               <h3 className="font-bold text-sm text-slate-900">
-                Tải Công Việc &amp; Hiệu Suất Đội Ngũ
+                Tải Công Việc, Doanh Thu &amp; Hoa Hồng Đội Ngũ
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">
-                Giám sát số lượng Lead đang phụ trách và tỷ lệ chốt của từng bạn Sale
+                Giám sát doanh số, hoa hồng thực nhận và tỷ lệ chốt của từng bạn Sale
               </p>
             </div>
             <button
@@ -206,7 +262,7 @@ export default function SalesManagerDashboard({ reportData }: SalesManagerDashbo
           </div>
 
           <div className="space-y-3">
-            {salesReps.slice(0, 5).map((rep, idx) => (
+            {salesReps.slice(0, 6).map((rep, idx) => (
               <div
                 key={rep.userId || idx}
                 className="p-3 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white hover:border-emerald-300 transition-all space-y-2"
@@ -217,6 +273,11 @@ export default function SalesManagerDashboard({ reportData }: SalesManagerDashbo
                       #{rep.rank || (idx + 1)} Cty
                     </span>
                     <span className="font-bold text-slate-800">{rep.name}</span>
+                    {rep.role === 'LEADER' && (
+                      <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                        Leader
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-emerald-700 font-mono font-bold">{formatCurrency(rep.actualRevenue || 0)}</span>
@@ -233,10 +294,11 @@ export default function SalesManagerDashboard({ reportData }: SalesManagerDashbo
 
                 <div className="flex items-center justify-between text-[11px] text-slate-500">
                   <span>Đã chốt: <strong className="text-slate-800">{rep.wonCount || 0} đơn</strong></span>
-                  <span>Tỷ lệ chốt: <strong className="text-emerald-700">{rep.winRate || 0}%</strong></span>
-                  <span className="px-1.5 py-0.2 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    Sẵn sàng nhận lead
+                  <span className="text-amber-800 font-semibold flex items-center gap-1">
+                    <span>Hoa hồng:</span>
+                    <strong className="text-amber-600 font-mono font-bold">+{formatCurrency(rep.totalCommission || 0)}</strong>
                   </span>
+                  <span>Tỷ lệ: <strong className="text-emerald-700">{rep.winRate || 0}%</strong></span>
                 </div>
               </div>
             ))}
@@ -332,6 +394,74 @@ export default function SalesManagerDashboard({ reportData }: SalesManagerDashbo
             </div>
           )}
         </div>
+      </div>
+
+      {/* 4. CHI TIẾT NĂNG SUẤT, HOA HỒNG & SÓNG DOANH THU ĐỘI NGŨ */}
+      <div className="bg-white rounded-3xl border border-slate-200 p-5 sm:p-6 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-slate-100">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 animate-pulse" />
+              <h2 className="text-base font-black text-slate-900 tracking-tight">
+                Chi Tiết Doanh Thu Tháng, Hoa Hồng Thực Nhận &amp; Khách Hàng
+              </h2>
+            </div>
+            <p className="text-xs text-slate-500 mt-1">
+              Bấm chọn nhân sự bên dưới để xem biểu đồ sóng năng suất hàng ngày, tỷ lệ khách cũ/mới và hoa hồng chi tiết.
+            </p>
+          </div>
+        </div>
+
+        {/* Danh sách tab chọn nhanh các thành viên trong nhóm */}
+        {Object.keys(managerDrilldowns).length > 0 && (
+          <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+            {Object.values(managerDrilldowns).map((d: any) => {
+              const isSelected = (selectedRepId === d.user?.id) || (!selectedRepId && d.user?.id === currentUser?.id);
+              return (
+                <button
+                  key={d.user?.id}
+                  onClick={() => setSelectedRepId(d.user?.id)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer border ${
+                    isSelected
+                      ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                      : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                  }`}
+                >
+                  <span>{d.user?.name || 'Nhân sự'}</span>
+                  {d.user?.id === currentUser?.id && (
+                    <span className="text-[10px] bg-white/20 px-1 rounded">Bạn</span>
+                  )}
+                  {d.commission?.totalCommission > 0 && (
+                    <span className={`text-[10px] font-mono ${isSelected ? 'text-emerald-100' : 'text-amber-700 font-semibold'}`}>
+                      ({formatCurrency(d.commission.totalCommission)})
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {isLoadingAnalytics ? (
+          <div className="py-12 text-center text-xs text-slate-400 space-y-2">
+            <div className="w-8 h-8 border-3 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto" />
+            <div>Đang tải số liệu hoa hồng &amp; phân tích năng suất...</div>
+          </div>
+        ) : selectedRepId && managerDrilldowns[selectedRepId] ? (
+          <SaleProductivityDetail
+            data={managerDrilldowns[selectedRepId]}
+            isSelf={selectedRepId === currentUser?.id}
+          />
+        ) : Object.values(managerDrilldowns).length > 0 ? (
+          <SaleProductivityDetail
+            data={Object.values(managerDrilldowns)[0]}
+            isSelf={Object.values(managerDrilldowns)[0]?.user?.id === currentUser?.id}
+          />
+        ) : (
+          <div className="py-8 text-center text-xs text-slate-400 bg-slate-50 rounded-2xl">
+            Chưa có phát sinh giao dịch trong tháng này.
+          </div>
+        )}
       </div>
     </div>
   );

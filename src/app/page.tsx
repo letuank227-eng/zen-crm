@@ -97,6 +97,7 @@ export default function DashboardReportsPage() {
         'Nhân viên': s.name,
         'Team': s.teamName,
         'Doanh thu thực tế (₫)': s.actualRevenue,
+        'Hoa hồng nhận (₫)': s.totalCommission || 0,
         'Mục tiêu (₫)': s.targetRevenue,
         'Tỷ lệ chốt (%)': `${s.winRate}%`,
         'Tiến độ KPI (%)': `${s.kpiProgress}%`,
@@ -565,6 +566,12 @@ export default function DashboardReportsPage() {
                         {topSale.kpiProgress || 0}% KPI
                       </span>
                     </div>
+                    <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between text-xs">
+                      <span className="text-amber-800 font-semibold text-[11px]">💰 Hoa hồng:</span>
+                      <span className="font-extrabold text-amber-600 font-mono">
+                        +{formatCurrency(topSale.totalCommission || 0)}
+                      </span>
+                    </div>
                   </div>
                 </div>
               );
@@ -715,11 +722,12 @@ export default function DashboardReportsPage() {
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase text-[11px]">
                 <th className="py-3 px-3 text-center">Hạng Cty</th>
-                <th className="py-3 px-4">Nhân sự Sale</th>
+                <th className="py-3 px-4">Nhân sự</th>
                 <th className="py-3 px-4">Đội ngũ</th>
                 <th className="py-3 px-4 text-center">Số Deal Thắng</th>
                 <th className="py-3 px-4 text-center">Tỷ Lệ Chốt (%)</th>
                 <th className="py-3 px-4 text-right">Doanh Thu Đạt Được</th>
+                <th className="py-3 px-4 text-right text-amber-700">Hoa Hồng Nhận</th>
                 <th className="py-3 px-4 text-center">Tiến Độ KPI</th>
               </tr>
             </thead>
@@ -740,14 +748,22 @@ export default function DashboardReportsPage() {
                     </span>
                   </td>
                   <td className="py-3 px-4 font-bold text-slate-800">
-                    <span className={currentUser?.role === 'SALE' && !rep.isSelf ? 'font-mono text-slate-700' : ''}>
-                      {rep.name}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className={currentUser?.role === 'SALE' && !rep.isSelf ? 'font-mono text-slate-700' : ''}>
+                        {rep.name}
+                      </span>
+                      {rep.role === 'LEADER' && (
+                        <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                          Leader
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="py-3 px-4 text-slate-600">{rep.teamName}</td>
                   <td className="py-3 px-4 text-center font-semibold text-slate-800">{rep.wonCount}</td>
                   <td className="py-3 px-4 text-center font-bold text-purple-700">{rep.winRate}%</td>
                   <td className="py-3 px-4 text-right font-extrabold text-emerald-600">{formatCurrency(rep.actualRevenue)}</td>
+                  <td className="py-3 px-4 text-right font-extrabold text-amber-600 font-mono">+{formatCurrency(rep.totalCommission || 0)}</td>
                   <td className="py-3 px-4 text-center">
                     <span className="px-2 py-0.5 rounded-full font-bold text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200">
                       {rep.kpiProgress}%

@@ -254,11 +254,11 @@ export async function GET(request: NextRequest) {
   }
 
   // 2. SALE PERFORMANCE DONUT CHART (Bản đồ tròn Sale)
-  let salesUsers = db.users.filter(u => u.role === 'SALE');
+  let salesUsers = db.users.filter(u => u.role === 'SALE' || u.role === 'LEADER');
 
   // Phân quyền xem danh sách nhân sự:
   // - ADMIN: Xem toàn bộ sale công ty.
-  // - LEADER: Chỉ xem các thành viên thuộc đội nhóm của mình, tuyệt đối không xem sale team khác và không xem Giám Đốc.
+  // - LEADER: Chỉ xem các thành viên thuộc đội nhóm của mình (và bản thân leader), tuyệt đối không xem sale team khác và không xem Giám Đốc.
   // - SALE: Chỉ xem duy nhất bản thân mình.
   if (user.role === 'SALE') {
     salesUsers = salesUsers.filter(u => u.id === user.id);

@@ -176,9 +176,15 @@ export default function SalesRepDashboard({ reportData }: SalesRepDashboardProps
             />
           </div>
 
-          <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1">
-            <span>Đã chốt thành công: <strong className="text-slate-800 font-semibold">{myPerformance.wonCount || 0} đơn hàng</strong></span>
-            <span>Tỷ lệ chốt: <strong className="text-emerald-700 font-semibold">{myPerformance.winRate || 0}%</strong></span>
+          <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500 pt-1">
+            <span>Đã chốt: <strong className="text-slate-800 font-semibold">{myPerformance.wonCount || 0} đơn hàng</strong></span>
+            <span className="text-amber-900 font-bold bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200 flex items-center gap-1">
+              <span>💰 Hoa hồng:</span>
+              <strong className="text-amber-600 font-mono text-xs">
+                +{formatCurrency(myPerformance.totalCommission || myDrilldown?.commission?.monthCommission || myDrilldown?.commission?.totalCommission || 0)}
+              </strong>
+            </span>
+            <span>Tỷ lệ: <strong className="text-emerald-700 font-semibold">{myPerformance.winRate || 0}%</strong></span>
           </div>
         </div>
 

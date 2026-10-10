@@ -3,13 +3,14 @@ import { readDb, writeDb, getCurrentUser, logAuditEvent, toSafeUser } from '@/li
 import { generateId } from '@/lib/utils';
 import { hashPassword, generateTempPassword, MIN_PASSWORD_LENGTH } from '@/lib/password';
 import { User, Role } from '@/types/crm';
+import { calcDealCommission } from '@/lib/commission';
 
 const VALID_ROLES: Role[] = ['ADMIN', 'LEADER', 'SALE', 'STAFF'];
 
 export async function GET(request: NextRequest) {
   const userId = request.headers.get('x-user-id') || undefined;
   const user = await getCurrentUser(userId);
-  const db = await readDb({ includeProducts: false });
+  const db = await readDb({ includeProducts: true });
   const searchParams = request.nextUrl.searchParams;
   const dateFrom = searchParams.get('dateFrom');
   const dateTo = searchParams.get('dateTo');
@@ -68,6 +69,7 @@ export async function GET(request: NextRequest) {
     ).length;
 
     const actualRevenue = wonDeals.reduce((sum, d) => sum + d.value, 0);
+    const totalCommission = wonDeals.reduce((sum, d) => sum + calcDealCommission(d, db.products || []), 0);
     const kpiProgress = u.targetRevenue > 0 ? Math.round((actualRevenue / u.targetRevenue) * 100) : 0;
 
     return {
@@ -75,6 +77,7 @@ export async function GET(request: NextRequest) {
       activeLeads,
       wonDealsCount: wonDeals.length,
       actualRevenue,
+      totalCommission,
       kpiProgress,
       hasPassword: !!u.password,
       isOnline: u.lastActiveAt ? Date.now() - new Date(u.lastActiveAt).getTime() <= 3 * 60 * 1000 : false,

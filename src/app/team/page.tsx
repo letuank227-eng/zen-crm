@@ -374,13 +374,32 @@ export default function TeamPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
             <div className="p-3 bg-slate-800/80 border border-slate-700 rounded-xl space-y-1">
               <span className="text-[11px] text-slate-400 font-medium">Doanh Thu Đã Chốt</span>
               <div className="text-base font-extrabold text-emerald-400 font-futura tracking-tight">
                 {formatCurrency(personalData.actualRevenue || 0)}
               </div>
               <div className="text-[10px] text-slate-500">Mục tiêu: {formatCurrency(personalData.targetRevenue || 0)}</div>
+            </div>
+
+            <div className="p-3 bg-amber-950/40 border border-amber-500/40 rounded-xl space-y-1 relative overflow-hidden">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] text-amber-300 font-bold flex items-center gap-1">
+                  <span>💰 Hoa Hồng Nhận</span>
+                </span>
+                <span className="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded border border-amber-500/30 font-extrabold font-mono">
+                  {personalData.actualRevenue > 0
+                    ? `~${Math.round(((personalData.totalCommission || 0) / personalData.actualRevenue) * 1000) / 10}%`
+                    : '8%'}
+                </span>
+              </div>
+              <div className="text-base font-extrabold text-amber-400 font-futura tracking-tight">
+                {formatCurrency(personalData.totalCommission || 0)}
+              </div>
+              <div className="text-[10px] text-amber-200/70">
+                {personalData.wonDealsCount > 0 ? `Từ ${personalData.wonDealsCount} deal chốt` : 'Chưa có deal chốt'}
+              </div>
             </div>
 
             <div className="p-3 bg-slate-800/80 border border-slate-700 rounded-xl space-y-1">
@@ -393,7 +412,7 @@ export default function TeamPage() {
 
             <div className="p-3 bg-slate-800/80 border border-slate-700 rounded-xl space-y-1">
               <span className="text-[11px] text-slate-400 font-medium">Khách Hàng Đang Xử Lý</span>
-              <div className="text-base font-extrabold text-amber-400 font-futura tracking-tight">
+              <div className="text-base font-extrabold text-blue-400 font-futura tracking-tight">
                 {personalData.activeLeads || 0} Lead
               </div>
               <div className="text-[10px] text-slate-500">Đang chăm sóc trong quy trình</div>
@@ -463,8 +482,15 @@ export default function TeamPage() {
                     <div className="text-emerald-700 font-extrabold text-base pt-1">
                       {formatCurrency(rep.actualRevenue || 0)}
                     </div>
-                    <div className="text-[11px] text-slate-400">
-                      Đã chốt: <strong>{rep.wonDealsCount || 0}</strong> deals | Đạt: <strong>{rep.kpiProgress || 0}%</strong> KPI
+                    <div className="text-[11px] text-slate-500 flex items-center justify-between pt-0.5">
+                      <span>Đã chốt: <strong>{rep.wonDealsCount || 0}</strong> deals</span>
+                      <span>Đạt: <strong className="text-emerald-700">{rep.kpiProgress || 0}%</strong> KPI</span>
+                    </div>
+                    <div className="pt-1.5 border-t border-slate-100 flex items-center justify-between text-xs">
+                      <span className="text-[11px] text-amber-800 font-semibold">💰 Hoa hồng nhận:</span>
+                      <span className="font-extrabold text-amber-600 font-mono">
+                        {formatCurrency(rep.totalCommission || 0)}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -495,6 +521,7 @@ export default function TeamPage() {
                 <th className="py-3 px-4 whitespace-nowrap">Đội nhóm (Team)</th>
                 <th className="py-3 px-4 whitespace-nowrap">Mục tiêu Doanh số (KPI)</th>
                 <th className="py-3 px-4 whitespace-nowrap">Doanh thu thực tế</th>
+                <th className="py-3 px-4 whitespace-nowrap text-amber-700">Hoa hồng nhận</th>
                 <th className="py-3 px-4 text-center whitespace-nowrap">% Đạt</th>
                 <th className="py-3 px-4 whitespace-nowrap">Trạng thái</th>
                 <th className="py-3 px-4 text-right whitespace-nowrap">Thao tác</th>
@@ -528,6 +555,10 @@ export default function TeamPage() {
 
                   <td className="py-3 px-4 font-extrabold text-emerald-600 font-mono whitespace-nowrap">
                     {formatCurrency(u.actualRevenue || 0)}
+                  </td>
+
+                  <td className="py-3 px-4 font-extrabold text-amber-600 font-mono whitespace-nowrap">
+                    +{formatCurrency(u.totalCommission || 0)}
                   </td>
 
                   <td className="py-3 px-4 text-center whitespace-nowrap">

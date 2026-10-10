@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { readDb, getCurrentUser, filterDealsByRole, filterLeadsByRole } from '@/lib/db';
 import { maskSaleName, parseDateBoundary } from '@/lib/utils';
+import { calcDealCommission } from '@/lib/commission';
 
 export async function GET(request: NextRequest) {
   const userId = request.headers.get('x-user-id') || undefined;
   const user = await getCurrentUser(userId);
-  const db = await readDb({ includeProducts: false });
+  const db = await readDb({ includeProducts: true });
 
   const searchParams = request.nextUrl.searchParams;
   const dateFrom = searchParams.get('dateFrom');
@@ -102,13 +103,14 @@ export async function GET(request: NextRequest) {
 
   // 1. TÍNH TOÁN BẢNG XẾP HẠNG TOÀN CÔNG TY TRƯỚC HẾT (ĐỂ RANK CHUẨN XÁC 100% CỦA TOÀN CÔNG TY):
   const allCompanySalesRanked = db.users
-    .filter(u => u.role === 'SALE')
+    .filter(u => u.role === 'SALE' || u.role === 'LEADER')
     .map(s => {
       const sDeals = allCompanyDeals.filter(d => d.assignedSaleId === s.id);
       const sWon = sDeals.filter(d => wonStages.has(d.stageId));
       const sRevenue = sWon.reduce((sum, d) => sum + d.value, 0);
       const sClosedCount = sWon.length + sDeals.filter(d => lostStages.has(d.stageId)).length;
       const sWinRate = sClosedCount > 0 ? Math.round((sWon.length / sClosedCount) * 100) : 0;
+      const sCommission = sWon.reduce((sum, d) => sum + calcDealCommission(d, db.products || []), 0);
 
       return {
         userId: s.id,
@@ -116,11 +118,13 @@ export async function GET(request: NextRequest) {
         name: isSale && s.id !== user.id ? maskSaleName(s.name) : s.name,
         maskedName: maskSaleName(s.name),
         isSelf: s.id === user.id,
+        role: s.role,
         avatar: s.avatar,
         teamId: s.teamId,
         teamName: s.teamName || 'Kinh doanh',
         targetRevenue: s.targetRevenue,
         actualRevenue: sRevenue,
+        totalCommission: sCommission,
         wonCount: sWon.length,
         winRate: sWinRate,
         kpiProgress: s.targetRevenue > 0 ? Math.round((sRevenue / s.targetRevenue) * 100) : 0,
