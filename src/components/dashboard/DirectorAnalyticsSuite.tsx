@@ -55,7 +55,7 @@ export default function DirectorAnalyticsSuite() {
   const [data, setData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedSaleId, setSelectedSaleId] = useState<string | null>(null);
-  const [selectedTeamFilter, setSelectedTeamFilter] = useState<string>('ALL');
+  const [selectedTeamFilter, setSelectedTeamFilter] = useState<string>('NONE');
   const [saleSearchKeyword, setSaleSearchKeyword] = useState<string>('');
   const [showPeriodDropdown, setShowPeriodDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -136,7 +136,10 @@ export default function DirectorAnalyticsSuite() {
     ? []
     : saleDonut.filter((s: any) => {
         const tName = s.teamName?.trim() || 'Chưa phân nhóm';
-        const matchesTeam = selectedTeamFilter === 'ALL' || tName === selectedTeamFilter;
+        const matchesTeam =
+          selectedTeamFilter === 'NONE' || selectedTeamFilter === 'ALL'
+            ? true
+            : tName === selectedTeamFilter;
 
         const kw = saleSearchKeyword.trim().toLowerCase();
         const matchesSearch = !kw ||
@@ -146,6 +149,8 @@ export default function DirectorAnalyticsSuite() {
 
         return matchesTeam && matchesSearch;
       });
+
+  const isExpanded = selectedTeamFilter !== 'NONE' || saleSearchKeyword.trim().length > 0;
 
   const periodsList: { id: 'DAY' | 'WEEK' | 'MONTH' | 'QUARTER' | 'YEAR'; label: string; desc: string }[] = [
     { id: 'DAY', label: 'Hôm nay', desc: 'So với Hôm qua' },
@@ -668,18 +673,18 @@ export default function DirectorAnalyticsSuite() {
           )}
         </div>
 
-        {/* BỘ LỌC ĐỘI NHÓM & TÌM KIẾM NHÂN SỰ SALE */}
-        <div className="bg-slate-50/80 rounded-2xl p-3.5 sm:p-4 border border-slate-200/90 space-y-3">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-            {/* Ô tìm kiếm nhanh */}
-            <div className="relative flex-1 max-w-md">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+        {/* BỘ LỌC ĐỘI NHÓM & TÌM KIẾM NHÂN SỰ SALE - THIẾT KẾ GỌN GÀNG TIẾT KIỆM KHÔNG GIAN */}
+        <div className="bg-slate-50/80 rounded-2xl p-3 sm:p-3.5 border border-slate-200/90 space-y-2.5">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+            {/* 1. Ô tìm kiếm nhanh */}
+            <div className="relative">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="text"
                 value={saleSearchKeyword}
                 onChange={(e) => setSaleSearchKeyword(e.target.value)}
-                placeholder="Tìm nhanh theo tên, email nhân sự..."
-                className="w-full pl-9 pr-9 py-2 text-xs sm:text-sm bg-white rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all placeholder:text-slate-400 font-medium shadow-2xs"
+                placeholder="Tìm tên, email bạn Sale..."
+                className="w-full pl-9 pr-8 py-2 text-xs sm:text-sm bg-white rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all placeholder:text-slate-400 font-medium shadow-2xs"
               />
               {saleSearchKeyword && (
                 <button
@@ -693,110 +698,78 @@ export default function DirectorAnalyticsSuite() {
               )}
             </div>
 
-            {/* Dropdown chọn Đội nhóm */}
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-slate-600 whitespace-nowrap">
-                <Filter className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Đội nhóm:</span>
-              </div>
-              <div className="relative flex-1 sm:w-56">
-                <select
-                  value={selectedTeamFilter}
-                  onChange={(e) => setSelectedTeamFilter(e.target.value)}
-                  className="w-full appearance-none pl-3 pr-8 py-2 text-xs sm:text-sm bg-white rounded-xl border border-slate-200 font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer shadow-2xs"
-                >
-                  <option value="ALL">Tất cả đội nhóm ({saleDonut.length})</option>
-                  {teamListWithCount.map((t) => (
-                    <option key={t.teamName} value={t.teamName}>
-                      {t.teamName} ({t.count})
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="w-4 h-4 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-              </div>
-            </div>
-          </div>
-
-          {/* Thanh Pills chọn nhanh Team (hiển thị khi có nhiều nhóm) */}
-          {teamListWithCount.length > 1 && (
-            <div className="flex items-center gap-1.5 flex-wrap pt-1 border-t border-slate-200/60">
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1">Nhóm:</span>
-              <button
-                type="button"
-                onClick={() => setSelectedTeamFilter('ALL')}
-                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
-                  selectedTeamFilter === 'ALL'
-                    ? 'bg-emerald-600 text-white shadow-xs'
-                    : 'bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-slate-200'
-                }`}
+            {/* 2. Dropdown chọn Đội nhóm */}
+            <div className="relative">
+              <select
+                value={selectedTeamFilter}
+                onChange={(e) => setSelectedTeamFilter(e.target.value)}
+                className="w-full appearance-none pl-8 pr-8 py-2 text-xs sm:text-sm bg-white rounded-xl border border-slate-200 font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer shadow-2xs"
               >
-                <span>Tất cả</span>
-                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                  selectedTeamFilter === 'ALL' ? 'bg-emerald-700/60 text-white' : 'bg-slate-100 text-slate-600'
-                }`}>
-                  {saleDonut.length}
-                </span>
-              </button>
-
-              {teamListWithCount.map((t) => {
-                const isCurrent = selectedTeamFilter === t.teamName;
-                return (
-                  <button
-                    key={t.teamName}
-                    type="button"
-                    onClick={() => setSelectedTeamFilter(t.teamName)}
-                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
-                      isCurrent
-                        ? 'bg-emerald-600 text-white shadow-xs'
-                        : 'bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-slate-200'
-                    }`}
-                  >
-                    <span>{t.teamName}</span>
-                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                      isCurrent ? 'bg-emerald-700/60 text-white' : 'bg-slate-100 text-slate-600'
-                    }`}>
-                      {t.count}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Dòng tóm tắt trạng thái lọc & Nút reset */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-xs text-slate-500 pt-0.5">
-            <div>
-              Hiển thị <strong className="text-slate-900 font-extrabold">{filteredSales.length}</strong> / {saleDonut.length} bạn Sale
-              {selectedTeamFilter !== 'ALL' && (
-                <span className="ml-1 text-emerald-700 font-semibold">
-                  (nhóm: <span className="underline">{selectedTeamFilter}</span>)
-                </span>
-              )}
-              {saleSearchKeyword.trim() && (
-                <span className="ml-1 text-slate-700">
-                  với từ khóa &quot;<strong>{saleSearchKeyword}</strong>&quot;
-                </span>
-              )}
+                <option value="NONE">🏢 Chọn đội nhóm để hiển thị...</option>
+                <option value="ALL">Tất cả đội nhóm ({saleDonut.length} bạn)</option>
+                {teamListWithCount.map((t) => (
+                  <option key={t.teamName} value={t.teamName}>
+                    👥 {t.teamName} ({t.count} bạn)
+                  </option>
+                ))}
+              </select>
+              <Filter className="w-4 h-4 text-emerald-600 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <ChevronDown className="w-4 h-4 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
 
-            {(selectedTeamFilter !== 'ALL' || saleSearchKeyword.trim()) && (
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedTeamFilter('ALL');
-                  setSaleSearchKeyword('');
+            {/* 3. Dropdown chọn nhanh bạn Sale xem biểu đồ ngay */}
+            <div className="relative">
+              <select
+                value={selectedSaleId || ''}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setSelectedSaleId(val || null);
+                  if (val) {
+                    const sObj = saleDonut.find((s: any) => s.userId === val);
+                    if (sObj && sObj.teamName) {
+                      setSelectedTeamFilter(sObj.teamName);
+                    }
+                    const el = document.getElementById('sale-productivity-section');
+                    if (el) el.scrollIntoView({ behavior: 'smooth' });
+                  }
                 }}
-                className="self-start sm:self-auto text-[11px] font-semibold text-rose-600 hover:text-rose-700 hover:underline flex items-center gap-1"
+                className="w-full appearance-none pl-8 pr-8 py-2 text-xs sm:text-sm bg-white rounded-xl border border-slate-200 font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer shadow-2xs"
               >
-                <X className="w-3 h-3" />
-                <span>Xóa bộ lọc</span>
-              </button>
-            )}
+                <option value="">👤 Chọn nhanh bạn Sale xem biểu đồ...</option>
+                {saleDonut.map((s: any) => (
+                  <option key={s.userId} value={s.userId}>
+                    {s.name} ({s.teamName}) - {formatCurrency(s.currentRevenue)}
+                  </option>
+                ))}
+              </select>
+              <Users className="w-4 h-4 text-emerald-600 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <ChevronDown className="w-4 h-4 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
           </div>
         </div>
 
-        {/* BẢNG / DANH SÁCH THẺ BẤM VÀO TÊN TỪNG BẠN SALE */}
-        {filteredSales.length === 0 ? (
+        {/* NẾU CHƯA CHỌN ĐỘI NHÓM VÀ CHƯA TÌM KIẾM: ẨN TOÀN BỘ CÁC THẺ SALE ĐỂ TRÁNH MẤT KHÔNG GIAN */}
+        {!isExpanded ? (
+          <div className="py-3 px-4 sm:px-5 bg-gradient-to-r from-slate-50 via-emerald-50/20 to-slate-50 rounded-2xl border border-dashed border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2.5 text-slate-600">
+              <div className="w-7 h-7 rounded-lg bg-white border border-slate-200 shadow-2xs flex items-center justify-center flex-shrink-0 text-emerald-600">
+                <Filter className="w-3.5 h-3.5" />
+              </div>
+              <p className="text-[11px] sm:text-xs text-slate-600">
+                Danh sách thẻ Sale đang được thu gọn. Hãy chọn <strong>Đội nhóm</strong> hoặc tìm <strong>Tên Sale</strong> ở trên để hiển thị.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSelectedTeamFilter('ALL')}
+              className="self-start sm:self-auto px-3 py-1 rounded-xl text-xs font-semibold bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 transition-colors shadow-2xs flex items-center gap-1.5 whitespace-nowrap"
+            >
+              <Users className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Xem tất cả ({saleDonut.length} bạn)</span>
+            </button>
+          </div>
+        ) : filteredSales.length === 0 ? (
+          /* TRƯỜNG HỢP LỌC HOẶC TÌM KIẾM KHÔNG CÓ KẾT QUẢ */
           <div className="p-8 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-300 space-y-3">
             <div className="w-12 h-12 rounded-full bg-slate-200/70 text-slate-500 flex items-center justify-center mx-auto">
               <Search className="w-6 h-6" />
@@ -805,77 +778,108 @@ export default function DirectorAnalyticsSuite() {
               Không tìm thấy nhân sự phù hợp với bộ lọc
             </div>
             <p className="text-xs text-slate-500 max-w-md mx-auto">
-              Thử thay đổi từ khóa tìm kiếm hoặc bấm nút bên dưới để quay lại hiển thị toàn bộ nhân sự.
+              Thử thay đổi từ khóa tìm kiếm hoặc chọn đội nhóm khác.
             </p>
             <button
               type="button"
               onClick={() => {
-                setSelectedTeamFilter('ALL');
+                setSelectedTeamFilter('NONE');
                 setSaleSearchKeyword('');
               }}
               className="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 transition-colors shadow-xs"
             >
-              Hiển thị tất cả nhân sự ({saleDonut.length})
+              Đóng bộ lọc
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
-            {filteredSales.map((s: any) => {
-              const isSelected = selectedSaleId === s.userId;
-              return (
-                <button
-                  key={s.userId}
-                  onClick={() => {
-                    setSelectedSaleId(s.userId);
-                    const el = document.getElementById('sale-productivity-section');
-                    if (el) el.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                  className={`text-left p-4 rounded-2xl border-2 transition-all group flex flex-col justify-between relative overflow-hidden ${
-                    isSelected
-                      ? 'bg-gradient-to-br from-emerald-50 via-teal-50/50 to-white border-emerald-500 shadow-md ring-2 ring-emerald-500/20'
-                      : 'bg-slate-50/70 border-slate-200 hover:border-emerald-400 hover:bg-emerald-50/30 hover:shadow-sm'
-                  }`}
-                >
-                  {isSelected && (
-                    <div className="absolute top-0 right-0 bg-emerald-600 text-white text-[9px] font-black uppercase px-2.5 py-0.5 rounded-bl-xl shadow-xs">
-                      Đang xem biểu đồ
-                    </div>
-                  )}
+          /* TRƯỜNG HỢP ĐÃ CHỌN ĐỘI NHÓM HOẶC CÓ TỪ KHÓA TÌM KIẾM -> HIỂN THỊ CÁC THẺ SALE */
+          <div className="space-y-3">
+            <div className="flex items-center justify-between text-xs text-slate-500 px-1">
+              <div>
+                Đang hiển thị <strong className="text-slate-900 font-extrabold">{filteredSales.length}</strong> bạn Sale
+                {selectedTeamFilter !== 'NONE' && selectedTeamFilter !== 'ALL' && (
+                  <span className="ml-1 text-emerald-700 font-semibold">
+                    thuộc nhóm <span className="underline">{selectedTeamFilter}</span>
+                  </span>
+                )}
+                {saleSearchKeyword.trim() && (
+                  <span className="ml-1 text-slate-700">
+                    với từ khóa &quot;<strong>{saleSearchKeyword}</strong>&quot;
+                  </span>
+                )}
+              </div>
 
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="w-11 h-11 rounded-2xl text-white font-extrabold text-base flex items-center justify-center shadow-sm flex-shrink-0"
-                      style={{ backgroundColor: s.color || '#10b981' }}
-                    >
-                      {s.name.charAt(0)}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="text-sm font-black text-slate-900 group-hover:text-emerald-700 transition-colors flex items-center gap-1.5">
-                        <span className="underline decoration-emerald-400/60 decoration-2 underline-offset-2">{s.name}</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedTeamFilter('NONE');
+                  setSaleSearchKeyword('');
+                }}
+                className="text-[11px] font-semibold text-rose-600 hover:text-rose-700 hover:underline flex items-center gap-1"
+              >
+                <X className="w-3 h-3" />
+                <span>Thu gọn / Ẩn danh sách</span>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+              {filteredSales.map((s: any) => {
+                const isSelected = selectedSaleId === s.userId;
+                return (
+                  <button
+                    key={s.userId}
+                    onClick={() => {
+                      setSelectedSaleId(s.userId);
+                      const el = document.getElementById('sale-productivity-section');
+                      if (el) el.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className={`text-left p-4 rounded-2xl border-2 transition-all group flex flex-col justify-between relative overflow-hidden ${
+                      isSelected
+                        ? 'bg-gradient-to-br from-emerald-50 via-teal-50/50 to-white border-emerald-500 shadow-md ring-2 ring-emerald-500/20'
+                        : 'bg-slate-50/70 border-slate-200 hover:border-emerald-400 hover:bg-emerald-50/30 hover:shadow-sm'
+                    }`}
+                  >
+                    {isSelected && (
+                      <div className="absolute top-0 right-0 bg-emerald-600 text-white text-[9px] font-black uppercase px-2.5 py-0.5 rounded-bl-xl shadow-xs">
+                        Đang xem biểu đồ
                       </div>
-                      <div className="text-[11px] text-slate-500 truncate mt-0.5">
-                        {s.teamName}
+                    )}
+
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="w-11 h-11 rounded-2xl text-white font-extrabold text-base flex items-center justify-center shadow-sm flex-shrink-0"
+                        style={{ backgroundColor: s.color || '#10b981' }}
+                      >
+                        {s.name.charAt(0)}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-black text-slate-900 group-hover:text-emerald-700 transition-colors flex items-center gap-1.5">
+                          <span className="underline decoration-emerald-400/60 decoration-2 underline-offset-2">{s.name}</span>
+                        </div>
+                        <div className="text-[11px] text-slate-500 truncate mt-0.5">
+                          {s.teamName}
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="mt-3.5 pt-3 border-t border-slate-200/80 flex items-center justify-between text-xs">
-                    <div>
-                      <div className="text-[10px] uppercase font-bold text-slate-400">Doanh thu</div>
-                      <div className="font-black text-slate-900 font-mono text-sm">{formatCurrency(s.currentRevenue)}</div>
+                    <div className="mt-3.5 pt-3 border-t border-slate-200/80 flex items-center justify-between text-xs">
+                      <div>
+                        <div className="text-[10px] uppercase font-bold text-slate-400">Doanh thu</div>
+                        <div className="font-black text-slate-900 font-mono text-sm">{formatCurrency(s.currentRevenue)}</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-[10px] uppercase font-bold text-slate-400">Đơn chốt</div>
+                        <div className="font-extrabold text-emerald-700">{s.wonCount} đơn ({s.percentage}%)</div>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <div className="text-[10px] uppercase font-bold text-slate-400">Đơn chốt</div>
-                      <div className="font-extrabold text-emerald-700">{s.wonCount} đơn ({s.percentage}%)</div>
-                    </div>
-                  </div>
 
-                  <div className="mt-2 text-[11px] font-semibold text-emerald-600 flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
-                    <span>Bấm vào tên để xem biểu đồ &amp; sản phẩm bán chạy</span>
-                  </div>
-                </button>
-              );
-            })}
+                    <div className="mt-2 text-[11px] font-semibold text-emerald-600 flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+                      <span>Bấm vào tên để xem biểu đồ &amp; sản phẩm bán chạy</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         )}
 
