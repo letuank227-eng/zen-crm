@@ -282,6 +282,7 @@ export async function GET(request: NextRequest) {
     return {
       userId: s.id,
       name: s.name,
+      email: s.email,
       avatar: s.avatar,
       teamName: s.teamName || 'Team Kinh Doanh',
       currentRevenue: sCurrRev,
