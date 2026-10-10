@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { readDb, getCurrentUser } from '@/lib/db';
+import { getUsersAndTeams } from '@/lib/db';
 import { getUserActivityReportData } from '@/lib/userActivityStorage';
 
 export const dynamic = 'force-dynamic';
@@ -11,7 +11,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Chưa đăng nhập' }, { status: 401 });
     }
 
-    const currentUser = await getCurrentUser(userId);
+    const { users, teams } = await getUsersAndTeams();
+    const currentUser = users.find(u => u.id === userId);
+    if (!currentUser) {
+      return NextResponse.json({ error: 'Không tìm thấy tài khoản' }, { status: 401 });
+    }
+    if (currentUser.isLocked) {
+      return NextResponse.json({ error: 'Tài khoản đã bị khóa' }, { status: 403 });
+    }
     // Yêu cầu phân quyền bảo mật: Chỉ ADMIN mới được xem trạng thái hoạt động và thời gian sử dụng app
     if (currentUser.role !== 'ADMIN') {
       return NextResponse.json(
@@ -30,12 +37,10 @@ export async function GET(request: NextRequest) {
       targetDate = vnTime.toISOString().slice(0, 10);
     }
 
-    const db = await readDb({ includeProducts: false });
-
     const report = await getUserActivityReportData({
       targetDate,
-      users: db.users || [],
-      teams: db.teams || [],
+      users,
+      teams,
     });
 
     return NextResponse.json(report);

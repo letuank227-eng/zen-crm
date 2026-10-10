@@ -30,7 +30,7 @@ interface Snapshot {
 const snapshots = new WeakMap<object, Snapshot>();
 
 let clientInstance: Client | null = null;
-function getClient(): Client {
+export function getClient(): Client {
   if (!clientInstance) {
     const url = process.env.TURSO_DATABASE_URL || process.env.DATABASE_URL;
     if (!url) throw new Error('TURSO_DATABASE_URL is not set');

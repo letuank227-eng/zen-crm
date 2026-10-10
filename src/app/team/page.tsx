@@ -661,6 +661,7 @@ export default function TeamPage() {
           setActivityDate={setActivityDate}
           isLoading={isActivityLoading}
           onRefresh={() => fetchActivityData(activityDate)}
+          teams={teams}
         />
       )}
 

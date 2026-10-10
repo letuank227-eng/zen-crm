@@ -1,4 +1,4 @@
-import { CrmDatabase, User, Lead, Deal, Task, Note, AuditLog, Product, Order, Role } from '@/types/crm';
+import { CrmDatabase, User, Team, Lead, Deal, Task, Note, AuditLog, Product, Order, Role } from '@/types/crm';
 import { generateId } from './utils';
 import {
   loadDb,
@@ -38,6 +38,35 @@ export class AuthError extends Error {
     super(message);
     this.name = 'AuthError';
   }
+}
+
+/**
+ * Tải nhanh duy nhất 2 collections users và teams từ database
+ * Tránh đọc toàn bộ collections nặng khác (products, orders, audit_logs...), giúp tăng tốc tối đa
+ */
+export async function getUsersAndTeams(): Promise<{ users: User[]; teams: Team[] }> {
+  if (usingTurso()) {
+    try {
+      const { getClient } = await import('./storage');
+      const client = getClient();
+      const rs = await client.execute("SELECT name, data FROM crm_collections WHERE name IN ('users', 'teams')");
+      let users: User[] = [];
+      let teams: Team[] = [];
+      rs.rows.forEach(r => {
+        const name = String(r.name);
+        try {
+          const val = typeof r.data === 'string' ? JSON.parse(r.data) : r.data;
+          if (name === 'users') users = val;
+          if (name === 'teams') teams = val;
+        } catch {}
+      });
+      if (users.length > 0) {
+        return { users, teams };
+      }
+    } catch {}
+  }
+  const db = await readDb({ includeProducts: false });
+  return { users: db.users || [], teams: db.teams || [] };
 }
 
 /**

@@ -12,22 +12,13 @@ export default function UserActivityTracker() {
   useEffect(() => {
     if (!currentUser) return;
 
-    // Cập nhật mốc thời gian khi người dùng có thao tác trên màn hình
-    const handleUserInteraction = () => {
-      lastActionRef.current = Date.now();
-      // Nếu đã hơn 15s kể từ lần ping gần nhất, gửi ngay lập tức để cập nhật trạng thái
-      if (Date.now() - lastHeartbeatSentRef.current > 15000) {
-        sendHeartbeat();
-      }
-    };
-
     const sendHeartbeat = async () => {
-      // Nếu tab đang ẩn hoàn toàn thì bỏ qua
+      // Nếu tab đang ẩn hoàn toàn thì bỏ qua chu kỳ định kỳ
       if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
         return;
       }
 
-      // Ngưỡng treo máy / rời máy: 15 phút không có thao tác (cho phép đọc báo cáo thoải mái)
+      // Ngưỡng treo máy / rời máy: 15 phút không có thao tác
       const idleTime = Date.now() - lastActionRef.current;
       if (idleTime > 15 * 60 * 1000) {
         return;
@@ -37,9 +28,9 @@ export default function UserActivityTracker() {
       isHeartbeatInFlight.current = true;
       lastHeartbeatSentRef.current = Date.now();
 
-      // Dùng AbortController để chống treo request trên mobile
+      // Dùng AbortController 15 giây để chống nghẽn mạng di động 4G/Wifi yếu
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 8000);
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
 
       try {
         await fetchWithAuth('/api/user-activity/heartbeat', {
@@ -58,8 +49,17 @@ export default function UserActivityTracker() {
       }
     };
 
-    // 1. Gửi heartbeat NGAY LẬP TỨC khi vừa vào app (trong 150ms)
-    const initTimer = setTimeout(sendHeartbeat, 150);
+    // 1. Gửi heartbeat NGAY LẬP TỨC khi vừa vào app
+    sendHeartbeat();
+
+    // Cập nhật mốc thời gian khi người dùng có thao tác trên màn hình
+    const handleUserInteraction = () => {
+      lastActionRef.current = Date.now();
+      // Nếu đã hơn 12s kể từ lần ping gần nhất, gửi ngay lập tức để cập nhật trạng thái
+      if (Date.now() - lastHeartbeatSentRef.current > 12000) {
+        sendHeartbeat();
+      }
+    };
 
     // 2. Lắng nghe các thao tác người dùng (dùng capture: true để bắt cả scroll trong thẻ <main>)
     window.addEventListener('pointerdown', handleUserInteraction, { passive: true, capture: true });
@@ -69,28 +69,21 @@ export default function UserActivityTracker() {
     window.addEventListener('touchmove', handleUserInteraction, { passive: true, capture: true });
     window.addEventListener('click', handleUserInteraction, { passive: true, capture: true });
 
-    // 3. Khi người dùng mở lại tab app (từ app khác chuyển sang hoặc mở khóa màn hình)
-    const handleVisibilityChange = () => {
+    // 3. Khi người dùng mở lại tab app (từ app khác chuyển sang hoặc mở khóa màn hình trên iOS Safari / Android)
+    const handleWakeup = () => {
       if (document.visibilityState === 'visible') {
         lastActionRef.current = Date.now();
         sendHeartbeat();
       }
     };
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+    document.addEventListener('visibilitychange', handleWakeup);
+    window.addEventListener('pageshow', handleWakeup);
+    window.addEventListener('focus', handleWakeup);
 
-    const handleFocus = () => {
-      lastActionRef.current = Date.now();
-      if (Date.now() - lastHeartbeatSentRef.current > 10000) {
-        sendHeartbeat();
-      }
-    };
-    window.addEventListener('focus', handleFocus);
-
-    // 4. Chu kỳ định kỳ mỗi 20 giây khi đang mở app
-    const intervalId = setInterval(sendHeartbeat, 20000);
+    // 4. Chu kỳ định kỳ mỗi 15 giây khi đang mở app
+    const intervalId = setInterval(sendHeartbeat, 15000);
 
     return () => {
-      clearTimeout(initTimer);
       clearInterval(intervalId);
       window.removeEventListener('pointerdown', handleUserInteraction, { capture: true });
       window.removeEventListener('keydown', handleUserInteraction, { capture: true });
@@ -98,8 +91,9 @@ export default function UserActivityTracker() {
       window.removeEventListener('touchstart', handleUserInteraction, { capture: true });
       window.removeEventListener('touchmove', handleUserInteraction, { capture: true });
       window.removeEventListener('click', handleUserInteraction, { capture: true });
-      window.removeEventListener('focus', handleFocus);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleWakeup);
+      window.removeEventListener('pageshow', handleWakeup);
+      document.removeEventListener('visibilitychange', handleWakeup);
     };
   }, [currentUser, fetchWithAuth]);
 

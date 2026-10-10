@@ -116,59 +116,51 @@ export async function saveHeartbeat(params: {
   const vnDate = new Date(now.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
   if (usingTurso()) {
-    await ensureTables();
     const client = getClient();
 
-    // 1. Cập nhật trạng thái trực tuyến của user (Atomic UPSERT)
-    await client.execute({
-      sql: `INSERT INTO user_presence (user_id, device, last_active_at, updated_at)
-            VALUES (?, ?, ?, datetime('now'))
-            ON CONFLICT(user_id) DO UPDATE SET
-              device = excluded.device,
-              last_active_at = excluded.last_active_at,
-              updated_at = datetime('now')`,
-      args: [userId, device, nowIso],
-    });
+    const runBatch = async () => {
+      await client.batch([
+        {
+          sql: `INSERT INTO user_presence (user_id, device, last_active_at, updated_at)
+                VALUES (?, ?, ?, datetime('now'))
+                ON CONFLICT(user_id) DO UPDATE SET
+                  device = excluded.device,
+                  last_active_at = excluded.last_active_at,
+                  updated_at = datetime('now')`,
+          args: [userId, device, nowIso],
+        },
+        {
+          sql: `INSERT INTO user_daily_activities (user_id, date, device, total_seconds, sessions_count, first_active_at, last_active_at)
+                VALUES (?, ?, ?, 60, 1, ?, ?)
+                ON CONFLICT(user_id, date) DO UPDATE SET
+                  device = excluded.device,
+                  total_seconds = user_daily_activities.total_seconds + CASE
+                    WHEN (strftime('%s', excluded.last_active_at) - strftime('%s', user_daily_activities.last_active_at)) BETWEEN 1 AND 300
+                    THEN MIN(120, (strftime('%s', excluded.last_active_at) - strftime('%s', user_daily_activities.last_active_at)))
+                    WHEN (strftime('%s', excluded.last_active_at) - strftime('%s', user_daily_activities.last_active_at)) > 300
+                    THEN 60
+                    ELSE 20
+                  END,
+                  sessions_count = user_daily_activities.sessions_count + CASE
+                    WHEN (strftime('%s', excluded.last_active_at) - strftime('%s', user_daily_activities.last_active_at)) > 300
+                    THEN 1
+                    ELSE 0
+                  END,
+                  last_active_at = excluded.last_active_at`,
+          args: [userId, vnDate, device, nowIso, nowIso],
+        },
+      ], 'write');
+    };
 
-    // 2. Cập nhật bảng thời gian hoạt động theo ngày (Atomic UPSERT)
-    const existingRes = await client.execute({
-      sql: `SELECT total_seconds, sessions_count, last_active_at, first_active_at
-            FROM user_daily_activities
-            WHERE user_id = ? AND date = ?`,
-      args: [userId, vnDate],
-    });
-
-    if (existingRes.rows.length === 0) {
-      await client.execute({
-        sql: `INSERT INTO user_daily_activities (user_id, date, device, total_seconds, sessions_count, first_active_at, last_active_at)
-              VALUES (?, ?, ?, 60, 1, ?, ?)`,
-        args: [userId, vnDate, device, nowIso, nowIso],
-      });
-    } else {
-      const row = existingRes.rows[0];
-      const prevTotalSec = Number(row.total_seconds || 0);
-      const prevSessions = Number(row.sessions_count || 1);
-      const prevLastActive = new Date(String(row.last_active_at)).getTime();
-      const elapsed = Math.round((now.getTime() - prevLastActive) / 1000);
-
-      let newTotalSec = prevTotalSec;
-      let newSessions = prevSessions;
-
-      if (elapsed > 0 && elapsed <= 300) {
-        // Heartbeat trong vòng 5 phút: cộng dồn thời gian chính xác theo từng giây sử dụng
-        newTotalSec += Math.min(elapsed, 120);
-      } else if (elapsed > 300) {
-        // Cách xa hơn 5 phút (người dùng rời đi rồi quay lại): mở phiên sử dụng mới
-        newTotalSec += 60;
-        newSessions += 1;
+    try {
+      await runBatch();
+    } catch (err: any) {
+      if (String(err?.message || '').includes('no such table')) {
+        await ensureTables();
+        await runBatch();
+      } else {
+        throw err;
       }
-
-      await client.execute({
-        sql: `UPDATE user_daily_activities
-              SET total_seconds = ?, sessions_count = ?, last_active_at = ?, device = ?
-              WHERE user_id = ? AND date = ?`,
-        args: [newTotalSec, newSessions, nowIso, device, userId, vnDate],
-      });
     }
 
     return { ok: true, lastActiveAt: nowIso, isOnline: true };
@@ -247,12 +239,20 @@ export async function getUserActivityReportData(params: {
   >();
 
   if (usingTurso()) {
-    await ensureTables();
     const client = getClient();
 
     try {
-      // 1. Lấy trạng thái hiện tại của tất cả users (cực nhanh, chỉ đọc 1 bảng nhỏ)
-      const presRes = await client.execute('SELECT user_id, device, last_active_at FROM user_presence');
+      // Chạy song song 2 câu SELECT bằng Promise.all (< 0.4s)
+      const [presRes, actRes] = await Promise.all([
+        client.execute('SELECT user_id, device, last_active_at FROM user_presence'),
+        client.execute({
+          sql: `SELECT user_id, device, total_seconds, sessions_count, first_active_at, last_active_at
+                FROM user_daily_activities
+                WHERE date = ?`,
+          args: [targetDate],
+        }),
+      ]);
+
       presRes.rows.forEach(r => {
         presenceMap.set(String(r.user_id), {
           device: String(r.device || 'Trình duyệt Web'),
@@ -260,13 +260,6 @@ export async function getUserActivityReportData(params: {
         });
       });
 
-      // 2. Lấy thống kê của ngày cần xem
-      const actRes = await client.execute({
-        sql: `SELECT user_id, device, total_seconds, sessions_count, first_active_at, last_active_at
-              FROM user_daily_activities
-              WHERE date = ?`,
-        args: [targetDate],
-      });
       actRes.rows.forEach(r => {
         dayActivitiesMap.set(String(r.user_id), {
           total_seconds: Number(r.total_seconds || 0),
@@ -276,8 +269,12 @@ export async function getUserActivityReportData(params: {
           device: String(r.device || 'Trình duyệt Web'),
         });
       });
-    } catch (err) {
-      console.error('Error fetching activity from Turso:', err);
+    } catch (err: any) {
+      if (String(err?.message || '').includes('no such table')) {
+        await ensureTables();
+      } else {
+        console.error('Error fetching activity from Turso:', err);
+      }
     }
   } else if (fs.existsSync(LOCAL_ACTIVITY_FILE)) {
     try {
