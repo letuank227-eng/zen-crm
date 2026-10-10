@@ -121,7 +121,7 @@ export default function DirectorAnalyticsSuite() {
   const activeSaleDrilldown = selectedSaleId ? saleDrilldowns[selectedSaleId] : null;
 
   // Danh sách các đội nhóm duy nhất và số lượng nhân sự trong mỗi nhóm
-  const teamListWithCount = React.useMemo(() => {
+  const teamListWithCount = (() => {
     if (!saleDonut || !Array.isArray(saleDonut)) return [];
     const map = new Map<string, number>();
     saleDonut.forEach((s: any) => {
@@ -129,24 +129,23 @@ export default function DirectorAnalyticsSuite() {
       map.set(tName, (map.get(tName) || 0) + 1);
     });
     return Array.from(map.entries()).map(([teamName, count]) => ({ teamName, count }));
-  }, [saleDonut]);
+  })();
 
   // Lọc danh sách nhân sự sale theo Team và Search Keyword
-  const filteredSales = React.useMemo(() => {
-    if (!saleDonut || !Array.isArray(saleDonut)) return [];
-    return saleDonut.filter((s: any) => {
-      const tName = s.teamName?.trim() || 'Chưa phân nhóm';
-      const matchesTeam = selectedTeamFilter === 'ALL' || tName === selectedTeamFilter;
+  const filteredSales = (!saleDonut || !Array.isArray(saleDonut))
+    ? []
+    : saleDonut.filter((s: any) => {
+        const tName = s.teamName?.trim() || 'Chưa phân nhóm';
+        const matchesTeam = selectedTeamFilter === 'ALL' || tName === selectedTeamFilter;
 
-      const kw = saleSearchKeyword.trim().toLowerCase();
-      const matchesSearch = !kw ||
-        (s.name && s.name.toLowerCase().includes(kw)) ||
-        (s.email && s.email.toLowerCase().includes(kw)) ||
-        (tName.toLowerCase().includes(kw));
+        const kw = saleSearchKeyword.trim().toLowerCase();
+        const matchesSearch = !kw ||
+          (s.name && s.name.toLowerCase().includes(kw)) ||
+          (s.email && s.email.toLowerCase().includes(kw)) ||
+          (tName.toLowerCase().includes(kw));
 
-      return matchesTeam && matchesSearch;
-    });
-  }, [saleDonut, selectedTeamFilter, saleSearchKeyword]);
+        return matchesTeam && matchesSearch;
+      });
 
   const periodsList: { id: 'DAY' | 'WEEK' | 'MONTH' | 'QUARTER' | 'YEAR'; label: string; desc: string }[] = [
     { id: 'DAY', label: 'Hôm nay', desc: 'So với Hôm qua' },
