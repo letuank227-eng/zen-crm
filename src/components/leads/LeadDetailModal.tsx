@@ -283,9 +283,9 @@ export default function LeadDetailModal({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="w-full sm:max-w-4xl md:max-w-5xl bg-white h-full sm:h-[92vh] sm:rounded-2xl shadow-2xl flex flex-col border border-slate-200 overflow-hidden">
+      <div className="w-full sm:max-w-4xl md:max-w-5xl bg-white h-full sm:h-[92vh] sm:rounded-2xl shadow-2xl flex flex-col border border-slate-200 overflow-hidden pb-[env(safe-area-inset-bottom,0px)] sm:pb-0">
         {/* 1. CLEAN MODERN HEADER */}
-        <div className="bg-white border-b border-slate-200 px-4 sm:px-6 py-3 flex items-center justify-between gap-3 flex-shrink-0">
+        <div className="bg-white border-b border-slate-200 px-4 sm:px-6 py-3 pt-[calc(0.75rem+env(safe-area-inset-top,0px))] sm:pt-3 flex items-center justify-between gap-3 flex-shrink-0">
           <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
             <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center text-sm flex-shrink-0 shadow-2xs">
               {lead.fullName.charAt(0)}

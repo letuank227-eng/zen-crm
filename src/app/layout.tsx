@@ -12,7 +12,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: 'cover',
-  themeColor: '#065f46',
+  themeColor: '#ffffff',
 };
 
 export const metadata: Metadata = {
@@ -38,7 +38,7 @@ export default function RootLayout({
           content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
         />
         <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#065f46" />
+        <meta name="theme-color" content="#ffffff" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />

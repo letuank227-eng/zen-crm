@@ -1,16 +1,16 @@
 {
-  "timestamp": "2026-10-06T16:31:19.212Z",
+  "timestamp": "2026-10-07T16:44:45.457Z",
   "source": "turso-libsql",
   "metadata": {
     "auditLogs": {
-      "version": 161,
-      "updated_at": "2026-10-06 16:21:46",
-      "count": 163
+      "version": 168,
+      "updated_at": "2026-10-07 12:49:39",
+      "count": 170
     },
     "deals": {
-      "version": 15,
-      "updated_at": "2026-10-06 15:13:05",
-      "count": 7
+      "version": 17,
+      "updated_at": "2026-10-07 04:46:08",
+      "count": 9
     },
     "documents": {
       "version": 1,
@@ -23,9 +23,9 @@
       "count": 0
     },
     "leads": {
-      "version": 15,
-      "updated_at": "2026-10-06 15:13:05",
-      "count": 7
+      "version": 17,
+      "updated_at": "2026-10-07 04:46:07",
+      "count": 9
     },
     "notes": {
       "version": 1,
@@ -33,14 +33,14 @@
       "count": 0
     },
     "notifications": {
-      "version": 20,
-      "updated_at": "2026-10-06 15:13:06",
-      "count": 34
+      "version": 28,
+      "updated_at": "2026-10-07 13:00:55",
+      "count": 40
     },
     "orders": {
-      "version": 15,
-      "updated_at": "2026-10-06 15:13:05",
-      "count": 7
+      "version": 17,
+      "updated_at": "2026-10-07 04:46:08",
+      "count": 9
     },
     "pipelines": {
       "version": 1,
@@ -88,13 +88,83 @@
       "count": 0
     },
     "users": {
-      "version": 20,
-      "updated_at": "2026-10-06 16:21:56",
+      "version": 23,
+      "updated_at": "2026-10-07 12:49:35",
       "count": 6
     }
   },
   "data": {
     "auditLogs": [
+      {
+        "id": "aud_muy3u5z4dcb926",
+        "userId": "usr_admin_com",
+        "userName": "Quản Trị Viên",
+        "action": "DELETE",
+        "entityType": "USER",
+        "entityId": "usr_muy3t4m5gx1ata",
+        "details": "Gỡ bỏ quyền truy cập hệ thống của: Thế Vũ (thevu@gmail.com)",
+        "createdAt": "2026-10-07T12:49:36.448Z"
+      },
+      {
+        "id": "aud_muy3t5pm6p806k",
+        "userId": "usr_admin_com",
+        "userName": "Quản Trị Viên",
+        "action": "CREATE",
+        "entityType": "USER",
+        "entityId": "usr_muy3t4m5gx1ata",
+        "details": "Cấp quyền truy cập CRM cho Gmail: thevu@gmail.com (Thế Vũ) - Vai trò: SALE",
+        "createdAt": "2026-10-07T12:48:49.450Z"
+      },
+      {
+        "id": "aud_muy3e4v7t8ruro",
+        "userId": "usr_admin_com",
+        "userName": "Quản Trị Viên",
+        "action": "CREATE",
+        "entityType": "USER",
+        "entityId": "usr_admin_com",
+        "details": "Đăng nhập thành công vào hệ thống ZEN CRM (admin@zencrm.com - Vai trò: ADMIN)",
+        "createdAt": "2026-10-07T12:37:08.515Z"
+      },
+      {
+        "id": "aud_muxmn2b2wt1n49",
+        "userId": "usr_muwsmq34sfa01o",
+        "userName": "Đệ em",
+        "action": "CREATE",
+        "entityType": "USER",
+        "entityId": "usr_muwsmq34sfa01o",
+        "details": "Đăng nhập thành công vào hệ thống ZEN CRM (phuc@gmail.com - Vai trò: SALE)",
+        "createdAt": "2026-10-07T04:48:11.630Z"
+      },
+      {
+        "id": "aud_muxmmlx5os3034",
+        "userId": "usr_admin",
+        "userName": "Quản Trị Viên",
+        "action": "UPDATE",
+        "entityType": "USER",
+        "entityId": "usr_muwsmq34sfa01o",
+        "details": "Đặt lại mật khẩu / cập nhật tài khoản nhân viên: Đệ em",
+        "createdAt": "2026-10-07T04:47:50.393Z"
+      },
+      {
+        "id": "aud_muxmkiiulimfny",
+        "userId": "usr_admin",
+        "userName": "Quản Trị Viên",
+        "action": "CREATE",
+        "entityType": "LEAD",
+        "entityId": "lead_muxmke5ha0475y",
+        "details": "Tạo Lead \"nhí shop\" & Tự động đẩy Đơn hàng ORD-2026-1866 (Tổng: 3.195.000 ₫, Cọc: 0 ₫, Nợ: 3.195.000 ₫)",
+        "createdAt": "2026-10-07T04:46:12.678Z"
+      },
+      {
+        "id": "aud_muxmja2ehou9hb",
+        "userId": "usr_admin",
+        "userName": "Quản Trị Viên",
+        "action": "CREATE",
+        "entityType": "LEAD",
+        "entityId": "lead_muxmj3wi8pxzki",
+        "details": "Tạo Lead \"gkphgwa\" & Tự động đẩy Đơn hàng ORD-2026-7711 (Tổng: 0 ₫, Cọc: 0 ₫, Nợ: 0 ₫)",
+        "createdAt": "2026-10-07T04:45:15.062Z"
+      },
       {
         "id": "aud_muwvz5a9eonsev",
         "userId": "usr_admin",
@@ -1728,6 +1798,94 @@
     ],
     "deals": [
       {
+        "id": "deal_muxmke5hqqo3iq",
+        "title": "nhí shop - HỒNG MÔN ĐỎ",
+        "leadId": "lead_muxmke5ha0475y",
+        "customerName": "nhí shop",
+        "customerPhone": "0465234656",
+        "pipelineId": "pl_standard",
+        "stageId": "stg_won",
+        "value": 3195000,
+        "winProbability": 100,
+        "expectedCloseDate": "2026-10-14T04:46:07.013Z",
+        "assignedSaleId": "usr_admin",
+        "assignedSaleName": "Quản Trị Viên",
+        "products": [
+          {
+            "productId": "prod_muvk2bpdd1lpab",
+            "productName": "HỒNG MÔN ĐỎ",
+            "quantity": 1,
+            "unitPrice": 879000,
+            "discount": 0,
+            "total": 879000
+          },
+          {
+            "productId": "prod_muvk0fc1jg7b83",
+            "productName": "HỒNG MÔN ĐỎ",
+            "quantity": 1,
+            "unitPrice": 1229000,
+            "discount": 0,
+            "total": 1229000
+          },
+          {
+            "productId": "prod_muvk625kvgj8mb",
+            "productName": "HỒNG MÔN ĐỎ",
+            "quantity": 1,
+            "unitPrice": 349000,
+            "discount": 0,
+            "total": 349000
+          },
+          {
+            "productId": "prod_muvkxcygv2ydt4",
+            "productName": "ĐUÔI CÔNG XANH",
+            "quantity": 1,
+            "unitPrice": 399000,
+            "discount": 0,
+            "total": 399000
+          },
+          {
+            "productId": "prod_muvl3ngiix9kdg",
+            "productName": "KIM TIỀN",
+            "quantity": 1,
+            "unitPrice": 339000,
+            "discount": 0,
+            "total": 339000
+          }
+        ],
+        "contracts": [],
+        "stageUpdatedAt": "2026-10-07T04:46:07.013Z",
+        "createdAt": "2026-10-07T04:46:07.013Z",
+        "updatedAt": "2026-10-07T04:46:07.013Z"
+      },
+      {
+        "id": "deal_muxmj3wi10jmx0",
+        "title": "gkphgwa - Tư vấn nhu cầu setup thủy sinh",
+        "leadId": "lead_muxmj3wi8pxzki",
+        "customerName": "gkphgwa",
+        "customerPhone": "03365623",
+        "pipelineId": "pl_standard",
+        "stageId": "stg_won",
+        "value": 0,
+        "winProbability": 100,
+        "expectedCloseDate": "2026-10-14T04:45:07.074Z",
+        "assignedSaleId": "usr_admin",
+        "assignedSaleName": "Quản Trị Viên",
+        "products": [
+          {
+            "productId": "prod_lead_general",
+            "productName": "Tư vấn nhu cầu setup thủy sinh",
+            "quantity": 1,
+            "unitPrice": 0,
+            "discount": 0,
+            "total": 0
+          }
+        ],
+        "contracts": [],
+        "stageUpdatedAt": "2026-10-07T04:45:07.074Z",
+        "createdAt": "2026-10-07T04:45:07.074Z",
+        "updatedAt": "2026-10-07T04:45:07.074Z"
+      },
+      {
         "id": "deal_muwti01k1b7dzu",
         "title": "Ní - HỒNG MÔN ĐỎ",
         "leadId": "lead_muwti01knyu4p9",
@@ -2108,6 +2266,76 @@
     "interactions": [],
     "leads": [
       {
+        "id": "lead_muxmke5ha0475y",
+        "fullName": "nhí shop",
+        "phone": "0465234656",
+        "email": "",
+        "address": "234djfs",
+        "dob": "",
+        "company": "nhí đại gia",
+        "source": "Quảng cáo Facebook",
+        "status": "WON",
+        "assignedSaleId": "usr_admin",
+        "assignedSaleName": "Quản Trị Viên",
+        "tags": [],
+        "productIds": [
+          "prod_muvk2bpdd1lpab",
+          "prod_muvk0fc1jg7b83",
+          "prod_muvk625kvgj8mb",
+          "prod_muvkxcygv2ydt4",
+          "prod_muvl3ngiix9kdg"
+        ],
+        "productNames": [
+          "HỒNG MÔN ĐỎ",
+          "HỒNG MÔN ĐỎ",
+          "HỒNG MÔN ĐỎ",
+          "ĐUÔI CÔNG XANH",
+          "KIM TIỀN"
+        ],
+        "discount": 0,
+        "deposit": 0,
+        "shippingFee": 0,
+        "subtotal": 3195000,
+        "totalAmount": 3195000,
+        "remainingDebt": 3195000,
+        "orderId": "ord_muxmke5hfgit5h",
+        "orderCode": "ORD-2026-1866",
+        "notesCount": 0,
+        "lastContactAt": "2026-10-07T04:46:07.013Z",
+        "createdAt": "2026-10-07T04:46:07.013Z",
+        "updatedAt": "2026-10-07T04:46:07.013Z"
+      },
+      {
+        "id": "lead_muxmj3wi8pxzki",
+        "fullName": "gkphgwa",
+        "phone": "03365623",
+        "email": "",
+        "address": "ưe632w53et",
+        "dob": "",
+        "company": "rhplRle",
+        "source": "Quảng cáo Facebook",
+        "status": "WON",
+        "assignedSaleId": "usr_admin",
+        "assignedSaleName": "Quản Trị Viên",
+        "tags": [],
+        "productIds": [],
+        "productNames": [
+          "Tư vấn nhu cầu setup thủy sinh"
+        ],
+        "discount": 0,
+        "deposit": 0,
+        "shippingFee": 0,
+        "subtotal": 0,
+        "totalAmount": 0,
+        "remainingDebt": 0,
+        "orderId": "ord_muxmj3wirnd0t6",
+        "orderCode": "ORD-2026-7711",
+        "notesCount": 0,
+        "lastContactAt": "2026-10-07T04:45:07.074Z",
+        "createdAt": "2026-10-07T04:45:07.074Z",
+        "updatedAt": "2026-10-07T04:45:07.074Z"
+      },
+      {
         "id": "lead_muwti01knyu4p9",
         "fullName": "Ní",
         "phone": "1263729478",
@@ -2364,6 +2592,72 @@
     ],
     "notes": [],
     "notifications": [
+      {
+        "id": "notif_muxmkh5co0xzzx",
+        "userId": "usr_muwgiqfaf1j3jp",
+        "title": "🔔 Đơn hàng mới: ORD-2026-1866",
+        "message": "Quản Trị Viên vừa chốt đơn [ORD-2026-1866] cho khách \"nhí shop\" (3.195.000 ₫).",
+        "type": "ORDER_CREATED",
+        "orderId": "ord_muxmke5hfgit5h",
+        "orderCode": "ORD-2026-1866",
+        "leadId": "lead_muxmke5ha0475y",
+        "isRead": true,
+        "createdAt": "2026-10-07T04:46:10.896Z"
+      },
+      {
+        "id": "notif_muxmkh5ctim8ra",
+        "userId": "usr_depham",
+        "title": "🔔 Đơn hàng mới: ORD-2026-1866",
+        "message": "Quản Trị Viên vừa chốt đơn [ORD-2026-1866] cho khách \"nhí shop\" (3.195.000 ₫).",
+        "type": "ORDER_CREATED",
+        "orderId": "ord_muxmke5hfgit5h",
+        "orderCode": "ORD-2026-1866",
+        "leadId": "lead_muxmke5ha0475y",
+        "isRead": true,
+        "createdAt": "2026-10-07T04:46:10.896Z"
+      },
+      {
+        "id": "notif_muxmkh5c2dy4kp",
+        "userId": "usr_admin_com",
+        "title": "🔔 Đơn hàng mới: ORD-2026-1866",
+        "message": "Quản Trị Viên vừa chốt đơn [ORD-2026-1866] cho khách \"nhí shop\" (3.195.000 ₫).",
+        "type": "ORDER_CREATED",
+        "orderId": "ord_muxmke5hfgit5h",
+        "orderCode": "ORD-2026-1866",
+        "leadId": "lead_muxmke5ha0475y",
+        "isRead": true,
+        "createdAt": "2026-10-07T04:46:10.896Z"
+      },
+      {
+        "id": "notif_muxmj7r5wm3pxb",
+        "userId": "usr_muwgiqfaf1j3jp",
+        "title": "🌟 Khách hàng mới: gkphgwa",
+        "message": "Có khách hàng mới [gkphgwa] (Quảng cáo Facebook). Nhân sự phụ trách: Quản Trị Viên.",
+        "type": "LEAD_CREATED",
+        "leadId": "lead_muxmj3wi8pxzki",
+        "isRead": false,
+        "createdAt": "2026-10-07T04:45:12.065Z"
+      },
+      {
+        "id": "notif_muxmj7r5ff3toz",
+        "userId": "usr_depham",
+        "title": "🌟 Khách hàng mới: gkphgwa",
+        "message": "Có khách hàng mới [gkphgwa] (Quảng cáo Facebook). Nhân sự phụ trách: Quản Trị Viên.",
+        "type": "LEAD_CREATED",
+        "leadId": "lead_muxmj3wi8pxzki",
+        "isRead": true,
+        "createdAt": "2026-10-07T04:45:12.065Z"
+      },
+      {
+        "id": "notif_muxmj7r51serah",
+        "userId": "usr_admin_com",
+        "title": "🌟 Khách hàng mới: gkphgwa",
+        "message": "Có khách hàng mới [gkphgwa] (Quảng cáo Facebook). Nhân sự phụ trách: Quản Trị Viên.",
+        "type": "LEAD_CREATED",
+        "leadId": "lead_muxmj3wi8pxzki",
+        "isRead": false,
+        "createdAt": "2026-10-07T04:45:12.065Z"
+      },
       {
         "id": "notif_muwtitg0f17j91",
         "userId": "usr_muwswd2m3hfuf6",
@@ -2709,7 +3003,7 @@
         "orderId": "ord_muwsqv6ulwhgt3",
         "orderCode": "ORD-2026-1996",
         "leadId": "lead_muwsqv6u7adttu",
-        "isRead": false,
+        "isRead": true,
         "createdAt": "2026-10-06T14:51:23.425Z"
       },
       {
@@ -2721,7 +3015,7 @@
         "orderId": "ord_muwsqv6ulwhgt3",
         "orderCode": "ORD-2026-1996",
         "leadId": "lead_muwsqv6u7adttu",
-        "isRead": false,
+        "isRead": true,
         "createdAt": "2026-10-06T14:51:23.425Z"
       },
       {
@@ -2774,6 +3068,102 @@
       }
     ],
     "orders": [
+      {
+        "id": "ord_muxmke5hfgit5h",
+        "code": "ORD-2026-1866",
+        "leadId": "lead_muxmke5ha0475y",
+        "customerName": "nhí shop",
+        "customerPhone": "0465234656",
+        "customerAddress": "234djfs",
+        "company": "nhí đại gia",
+        "items": [
+          {
+            "productId": "prod_muvk2bpdd1lpab",
+            "productName": "HỒNG MÔN ĐỎ",
+            "quantity": 1,
+            "unitPrice": 879000,
+            "total": 879000
+          },
+          {
+            "productId": "prod_muvk0fc1jg7b83",
+            "productName": "HỒNG MÔN ĐỎ",
+            "quantity": 1,
+            "unitPrice": 1229000,
+            "total": 1229000
+          },
+          {
+            "productId": "prod_muvk625kvgj8mb",
+            "productName": "HỒNG MÔN ĐỎ",
+            "quantity": 1,
+            "unitPrice": 349000,
+            "total": 349000
+          },
+          {
+            "productId": "prod_muvkxcygv2ydt4",
+            "productName": "ĐUÔI CÔNG XANH",
+            "quantity": 1,
+            "unitPrice": 399000,
+            "total": 399000
+          },
+          {
+            "productId": "prod_muvl3ngiix9kdg",
+            "productName": "KIM TIỀN",
+            "quantity": 1,
+            "unitPrice": 339000,
+            "total": 339000
+          }
+        ],
+        "subtotal": 3195000,
+        "discount": 0,
+        "shippingFee": 0,
+        "deposit": 0,
+        "totalAmount": 3195000,
+        "paidAmount": 0,
+        "remainingDebt": 3195000,
+        "status": "PENDING",
+        "leadSource": "Quảng cáo Facebook",
+        "consultingStatus": "WON",
+        "notes": "",
+        "assignedSaleId": "usr_admin",
+        "assignedSaleName": "Quản Trị Viên",
+        "createdAt": "2026-10-07T04:46:07.013Z",
+        "dueDate": "2026-11-06T04:46:07.013Z",
+        "dealId": "deal_muxmke5hqqo3iq"
+      },
+      {
+        "id": "ord_muxmj3wirnd0t6",
+        "code": "ORD-2026-7711",
+        "leadId": "lead_muxmj3wi8pxzki",
+        "customerName": "gkphgwa",
+        "customerPhone": "03365623",
+        "customerAddress": "ưe632w53et",
+        "company": "rhplRle",
+        "items": [
+          {
+            "productId": "prod_lead_general",
+            "productName": "Tư vấn nhu cầu setup thủy sinh",
+            "quantity": 1,
+            "unitPrice": 0,
+            "total": 0
+          }
+        ],
+        "subtotal": 0,
+        "discount": 0,
+        "shippingFee": 0,
+        "deposit": 0,
+        "totalAmount": 0,
+        "paidAmount": 0,
+        "remainingDebt": 0,
+        "status": "COMPLETED",
+        "leadSource": "Quảng cáo Facebook",
+        "consultingStatus": "WON",
+        "notes": "",
+        "assignedSaleId": "usr_admin",
+        "assignedSaleName": "Quản Trị Viên",
+        "createdAt": "2026-10-07T04:45:07.074Z",
+        "dueDate": "2026-11-06T04:45:07.074Z",
+        "dealId": "deal_muxmj3wi10jmx0"
+      },
       {
         "id": "ord_muwti01knr2kzw",
         "code": "ORD-2026-4144",
@@ -4884,7 +5274,7 @@
         "role": "SALE",
         "phone": "",
         "isLocked": false,
-        "password": "$2b$10$SxaOV9LTzUSLi5D3WrIOLe.fp9NjRwRYf.Pk53dn/5nT87YtfigQW",
+        "password": "$2b$10$tm.VyaR88un6VatAOFy.J.OM0xRJmzdruz4CgK5necP8F4w2mDp2S",
         "targetRevenue": 150000000,
         "targetDeals": 8
       },

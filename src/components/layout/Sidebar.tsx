@@ -97,7 +97,7 @@ export default function Sidebar() {
 
       {/* Sidebar Container - Green background, white text */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-emerald-800 border-r border-emerald-750 flex flex-col flex-shrink-0 text-white transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-emerald-800 border-r border-emerald-750 flex flex-col flex-shrink-0 text-white transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)] lg:pt-0 lg:pb-0 ${
           isOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'
         }`}
       >

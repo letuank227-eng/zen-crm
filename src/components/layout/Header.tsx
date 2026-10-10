@@ -234,9 +234,10 @@ export default function Header() {
   };
 
   return (
-    <header className="h-16 bg-white border-b border-slate-200 px-3 sm:px-6 flex items-center justify-between z-30 sticky top-0">
-      {/* Left: Mobile Menu Toggle & Search Bar */}
-      <div className="flex items-center gap-2 flex-1 min-w-0 pr-2">
+    <header className="bg-white border-b border-slate-200 px-3 sm:px-6 z-30 sticky top-0 pt-[env(safe-area-inset-top,0px)]">
+      <div className="h-16 flex items-center justify-between w-full">
+        {/* Left: Mobile Menu Toggle & Search Bar */}
+        <div className="flex items-center gap-2 flex-1 min-w-0 pr-2">
         <button
           onClick={toggleSidebar}
           className="p-2 -ml-1 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 lg:hidden transition-colors flex-shrink-0"
@@ -367,7 +368,7 @@ export default function Header() {
                 onClick={() => setShowNotifications(false)}
                 aria-hidden="true"
               />
-              <div className="fixed inset-x-3 top-16 sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 sm:w-96 max-h-[calc(100dvh-8.5rem)] sm:max-h-[calc(100vh-6rem)] flex flex-col bg-white rounded-2xl shadow-2xl border border-slate-200 p-3 z-50 animate-in fade-in slide-in-from-top-2 overflow-hidden">
+              <div className="fixed inset-x-3 top-[calc(4rem+env(safe-area-inset-top,0px)+0.5rem)] sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 sm:w-96 max-h-[calc(100dvh-5.5rem-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px))] sm:max-h-[calc(100vh-6rem)] flex flex-col bg-white rounded-2xl shadow-2xl border border-slate-200 p-3 z-50 animate-in fade-in slide-in-from-top-2 overflow-hidden">
               <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100 flex-shrink-0">
                 <span className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
                   <Bell className="w-3.5 h-3.5 text-emerald-600" />
@@ -553,7 +554,7 @@ export default function Header() {
                 onClick={() => setShowUserMenu(false)}
                 aria-hidden="true"
               />
-              <div className="fixed inset-x-3 top-16 sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 sm:w-80 max-h-[calc(100dvh-8.5rem)] sm:max-h-[calc(100vh-6rem)] overflow-y-auto bg-white rounded-2xl shadow-xl border border-slate-200 p-2 z-50 animate-in fade-in zoom-in-95">
+              <div className="fixed inset-x-3 top-[calc(4rem+env(safe-area-inset-top,0px)+0.5rem)] sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 sm:w-80 max-h-[calc(100dvh-5.5rem-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px))] sm:max-h-[calc(100vh-6rem)] overflow-y-auto bg-white rounded-2xl shadow-xl border border-slate-200 p-2 z-50 animate-in fade-in zoom-in-95">
               {/* Current User Info */}
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 mb-2">
                 <div className="flex items-center gap-2 mb-2">
@@ -597,6 +598,7 @@ export default function Header() {
           </>
         )}
         </div>
+      </div>
       </div>
 
       {/* Change Password Modal */}

@@ -54,7 +54,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
       <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden w-full max-w-full">
         <Header />
-        <main className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-4 md:p-6 pb-24 lg:pb-6 bg-slate-50 w-full max-w-full">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-4 md:p-6 pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] lg:pb-6 bg-slate-50 w-full max-w-full">
           {children}
         </main>
       </div>
