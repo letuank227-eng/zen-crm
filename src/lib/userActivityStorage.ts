@@ -59,9 +59,9 @@ export function formatDuration(totalSeconds: number): string {
 
 /**
  * Ngưỡng kiểm tra trạng thái hoạt động:
- * - ONLINE: tương tác trong vòng 90 giây (1.5 phút).
- * - AWAY (Vừa rời đi / Treo máy): từ 90 giây tới 5 phút.
- * - OFFLINE: hơn 5 phút.
+ * - ONLINE: tương tác trong vòng 180 giây (3 phút).
+ * - AWAY (Vừa rời đi / Treo máy): từ 3 phút tới 8 phút (480s).
+ * - OFFLINE: hơn 8 phút.
  */
 export function getRelativePresence(isoDate?: string | null): {
   status: 'ONLINE' | 'AWAY' | 'OFFLINE' | 'NEVER';
@@ -77,10 +77,10 @@ export function getRelativePresence(isoDate?: string | null): {
   const diffMs = Math.max(0, now - then);
   const secondsAgo = Math.floor(diffMs / 1000);
 
-  if (secondsAgo <= 90) {
+  if (secondsAgo <= 180) {
     return { status: 'ONLINE', text: 'Đang trực tuyến', secondsAgo };
   }
-  if (secondsAgo <= 300) {
+  if (secondsAgo <= 480) {
     const mins = Math.max(1, Math.round(secondsAgo / 60));
     return { status: 'AWAY', text: `Vừa hoạt động (${mins} phút trước)`, secondsAgo };
   }
@@ -309,7 +309,26 @@ export async function getUserActivityReportData(params: {
       onlineNowCount++;
     }
 
-    const totalSeconds = dayData?.total_seconds || 0;
+    let totalSeconds = dayData?.total_seconds || 0;
+    let sessionsCount = dayData?.sessions_count || 0;
+    let firstActiveAt = dayData?.first_active_at || null;
+    let lastActiveAtOnDate = dayData?.last_active_at || null;
+
+    // KIỂM TRA ĐỒNG BỘ: Nếu user đã có hoạt động (effectiveLastActive) rơi vào ngày targetDate (giờ VN),
+    // nhưng dayData chưa kịp có record hoặc totalSeconds <= 0:
+    // Tuyệt đối không hiển thị 'Chưa vào app ngày này', mà tính tối thiểu 1 phút và ghi nhận phiên hoạt động!
+    if (effectiveLastActive) {
+      try {
+        const activeVnDate = new Date(new Date(effectiveLastActive).getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+        if (activeVnDate === targetDate && totalSeconds <= 0) {
+          totalSeconds = 60; // Ghi nhận tối thiểu 1 phút
+          sessionsCount = Math.max(1, sessionsCount);
+          firstActiveAt = effectiveLastActive;
+          lastActiveAtOnDate = effectiveLastActive;
+        }
+      } catch {}
+    }
+
     totalCompanySeconds += totalSeconds;
     if (totalSeconds > 0) {
       activeOnDateCount++;
@@ -335,10 +354,10 @@ export async function getUserActivityReportData(params: {
         date: targetDate,
         totalSeconds,
         formattedDuration: formatDuration(totalSeconds),
-        sessionsCount: dayData?.sessions_count || 0,
-        firstActiveAt: dayData?.first_active_at || null,
-        lastActiveAtOnDate: dayData?.last_active_at || null,
-        device: dayData?.device || presenceData?.device || null,
+        sessionsCount,
+        firstActiveAt,
+        lastActiveAtOnDate,
+        device: dayData?.device || presenceData?.device || u.currentDevice || 'Trình duyệt Web',
         workdayPercentage: Math.min(100, Math.round((totalSeconds / (8 * 3600)) * 100)),
       },
     };

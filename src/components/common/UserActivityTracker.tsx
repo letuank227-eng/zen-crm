@@ -15,26 +15,31 @@ export default function UserActivityTracker() {
     // Cập nhật mốc thời gian khi người dùng có thao tác trên màn hình
     const handleUserInteraction = () => {
       lastActionRef.current = Date.now();
-      // Nếu đã hơn 20s kể từ lần ping gần nhất, gửi ngay lập tức để cập nhật trạng thái
-      if (Date.now() - lastHeartbeatSentRef.current > 20000) {
+      // Nếu đã hơn 15s kể từ lần ping gần nhất, gửi ngay lập tức để cập nhật trạng thái
+      if (Date.now() - lastHeartbeatSentRef.current > 15000) {
         sendHeartbeat();
       }
     };
 
     const sendHeartbeat = async () => {
-      // Nếu tab đang ẩn hoặc đang có 1 request heartbeat khác đang gửi thì bỏ qua
+      // Nếu tab đang ẩn hoàn toàn thì bỏ qua
       if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
         return;
       }
-      // Nếu người dùng không có thao tác chuột/chạm trong hơn 3 phút (treo máy) thì tạm ngưng tính giờ
+
+      // Ngưỡng treo máy / rời máy: 15 phút không có thao tác (cho phép đọc báo cáo thoải mái)
       const idleTime = Date.now() - lastActionRef.current;
-      if (idleTime > 3 * 60 * 1000) {
+      if (idleTime > 15 * 60 * 1000) {
         return;
       }
 
       if (isHeartbeatInFlight.current) return;
       isHeartbeatInFlight.current = true;
       lastHeartbeatSentRef.current = Date.now();
+
+      // Dùng AbortController để chống treo request trên mobile
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
 
       try {
         await fetchWithAuth('/api/user-activity/heartbeat', {
@@ -43,24 +48,28 @@ export default function UserActivityTracker() {
           body: JSON.stringify({
             clientTime: new Date().toISOString(),
           }),
+          signal: controller.signal,
         });
       } catch (err) {
         // Heartbeat fail nhẹ trong background
       } finally {
+        clearTimeout(timeoutId);
         isHeartbeatInFlight.current = false;
       }
     };
 
-    // Gửi heartbeat ngay khi vừa mở app (tức thì trong 1 giây đầu)
-    const initTimer = setTimeout(sendHeartbeat, 500);
+    // 1. Gửi heartbeat NGAY LẬP TỨC khi vừa vào app (trong 150ms)
+    const initTimer = setTimeout(sendHeartbeat, 150);
 
-    // Lắng nghe các thao tác của người dùng
-    window.addEventListener('pointerdown', handleUserInteraction, { passive: true });
-    window.addEventListener('keydown', handleUserInteraction, { passive: true });
-    window.addEventListener('scroll', handleUserInteraction, { passive: true });
-    window.addEventListener('touchstart', handleUserInteraction, { passive: true });
+    // 2. Lắng nghe các thao tác người dùng (dùng capture: true để bắt cả scroll trong thẻ <main>)
+    window.addEventListener('pointerdown', handleUserInteraction, { passive: true, capture: true });
+    window.addEventListener('keydown', handleUserInteraction, { passive: true, capture: true });
+    window.addEventListener('scroll', handleUserInteraction, { passive: true, capture: true });
+    window.addEventListener('touchstart', handleUserInteraction, { passive: true, capture: true });
+    window.addEventListener('touchmove', handleUserInteraction, { passive: true, capture: true });
+    window.addEventListener('click', handleUserInteraction, { passive: true, capture: true });
 
-    // Khi người dùng quay lại tab app (chuyển từ app khác sang)
+    // 3. Khi người dùng mở lại tab app (từ app khác chuyển sang hoặc mở khóa màn hình)
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         lastActionRef.current = Date.now();
@@ -70,23 +79,25 @@ export default function UserActivityTracker() {
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
     const handleFocus = () => {
-      if (Date.now() - lastHeartbeatSentRef.current > 15000) {
-        lastActionRef.current = Date.now();
+      lastActionRef.current = Date.now();
+      if (Date.now() - lastHeartbeatSentRef.current > 10000) {
         sendHeartbeat();
       }
     };
     window.addEventListener('focus', handleFocus);
 
-    // Chu kỳ định kỳ mỗi 25 giây khi đang dùng app (nhanh, chuẩn và cực kỳ nhẹ nhàng)
-    const intervalId = setInterval(sendHeartbeat, 25000);
+    // 4. Chu kỳ định kỳ mỗi 20 giây khi đang mở app
+    const intervalId = setInterval(sendHeartbeat, 20000);
 
     return () => {
       clearTimeout(initTimer);
       clearInterval(intervalId);
-      window.removeEventListener('pointerdown', handleUserInteraction);
-      window.removeEventListener('keydown', handleUserInteraction);
-      window.removeEventListener('scroll', handleUserInteraction);
-      window.removeEventListener('touchstart', handleUserInteraction);
+      window.removeEventListener('pointerdown', handleUserInteraction, { capture: true });
+      window.removeEventListener('keydown', handleUserInteraction, { capture: true });
+      window.removeEventListener('scroll', handleUserInteraction, { capture: true });
+      window.removeEventListener('touchstart', handleUserInteraction, { capture: true });
+      window.removeEventListener('touchmove', handleUserInteraction, { capture: true });
+      window.removeEventListener('click', handleUserInteraction, { capture: true });
       window.removeEventListener('focus', handleFocus);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };

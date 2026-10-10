@@ -2,6 +2,18 @@ import { NextRequest, NextResponse } from 'next/server';
 import { readDb, writeDb, logAuditEvent, toSafeUser } from '@/lib/db';
 import { hashPassword, verifyPassword } from '@/lib/password';
 import { SESSION_COOKIE, createSessionToken, sessionCookieOptions } from '@/lib/session';
+import { saveHeartbeat } from '@/lib/userActivityStorage';
+
+function parseUserDevice(userAgent: string): string {
+  if (!userAgent) return 'Trình duyệt Web';
+  if (/iPhone/i.test(userAgent)) return 'iPhone (iOS)';
+  if (/iPad/i.test(userAgent)) return 'iPad (iOS)';
+  if (/Android/i.test(userAgent)) return 'Android';
+  if (/Windows/i.test(userAgent)) return 'Windows PC';
+  if (/Macintosh|Mac OS/i.test(userAgent)) return 'Mac OS';
+  if (/Linux/i.test(userAgent)) return 'Linux';
+  return 'Trình duyệt Web';
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -74,6 +86,18 @@ export async function POST(request: NextRequest) {
       user.id,
       `Đăng nhập thành công vào hệ thống ZEN CRM (${user.email} - Vai trò: ${user.role})`
     );
+
+    // Ghi nhận ngay lập tức trạng thái hoạt động trực tuyến và thời gian dùng app
+    try {
+      const userAgent = request.headers.get('user-agent') || '';
+      const device = parseUserDevice(userAgent);
+      await saveHeartbeat({
+        userId: user.id,
+        device,
+      });
+    } catch (actErr) {
+      console.warn('Lỗi ghi nhận heartbeat khi đăng nhập:', actErr);
+    }
 
     const sessionToken = await createSessionToken(user.id);
     const response = NextResponse.json({

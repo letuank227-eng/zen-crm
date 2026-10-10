@@ -114,7 +114,13 @@ export default function TeamPage() {
     const target = dateToFetch || activityDate;
     try {
       if (!silent) setIsActivityLoading(true);
-      const res = await fetchWithAuth(`/api/user-activity?date=${target}`);
+      // Thêm cache-buster timestamp để luôn nhận dữ liệu realtime mới nhất
+      const res = await fetchWithAuth(`/api/user-activity?date=${target}&_t=${Date.now()}`, {
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+        },
+      });
       if (res.ok) {
         const data = await res.json();
         setActivityData(data);
@@ -131,9 +137,9 @@ export default function TeamPage() {
       fetchActivityData(activityDate, false);
       const today = getTodayVnDate();
       let timer: any = null;
-      // Khi đang xem ngày hôm nay: tự động làm mới ngầm mỗi 15 giây (siêu nhanh & không giật lag)
+      // Khi đang xem ngày hôm nay: tự động làm mới ngầm mỗi 10 giây khi ở tab ACTIVITY
       if (activityDate === today) {
-        const pollInterval = activeTab === 'ACTIVITY' ? 15000 : 45000;
+        const pollInterval = activeTab === 'ACTIVITY' ? 10000 : 30000;
         timer = setInterval(() => {
           fetchActivityData(today, true);
         }, pollInterval);
