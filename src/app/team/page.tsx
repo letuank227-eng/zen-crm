@@ -109,11 +109,11 @@ export default function TeamPage() {
   const [activitySearch, setActivitySearch] = useState('');
   const [activityFilterStatus, setActivityFilterStatus] = useState<'ALL' | 'ONLINE' | 'ACTIVE_TODAY'>('ALL');
 
-  const fetchActivityData = async (dateToFetch?: string) => {
+  const fetchActivityData = async (dateToFetch?: string, silent = false) => {
     if (currentUser?.role !== 'ADMIN') return;
     const target = dateToFetch || activityDate;
     try {
-      setIsActivityLoading(true);
+      if (!silent) setIsActivityLoading(true);
       const res = await fetchWithAuth(`/api/user-activity?date=${target}`);
       if (res.ok) {
         const data = await res.json();
@@ -122,25 +122,27 @@ export default function TeamPage() {
     } catch (err) {
       console.error('Failed to load user activity data:', err);
     } finally {
-      setIsActivityLoading(false);
+      if (!silent) setIsActivityLoading(false);
     }
   };
 
   useEffect(() => {
     if (currentUser?.role === 'ADMIN') {
-      fetchActivityData(activityDate);
+      fetchActivityData(activityDate, false);
       const today = getTodayVnDate();
       let timer: any = null;
+      // Khi đang xem ngày hôm nay: tự động làm mới ngầm mỗi 15 giây (siêu nhanh & không giật lag)
       if (activityDate === today) {
+        const pollInterval = activeTab === 'ACTIVITY' ? 15000 : 45000;
         timer = setInterval(() => {
-          fetchActivityData(today);
-        }, 30000);
+          fetchActivityData(today, true);
+        }, pollInterval);
       }
       return () => {
         if (timer) clearInterval(timer);
       };
     }
-  }, [currentUser?.role, activityDate]);
+  }, [currentUser?.role, activityDate, activeTab]);
 
   useEffect(() => {
     if (currentUser) {

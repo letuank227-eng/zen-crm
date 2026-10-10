@@ -4,6 +4,7 @@ import { generateId } from '@/lib/utils';
 import { hashPassword, generateTempPassword, MIN_PASSWORD_LENGTH } from '@/lib/password';
 import { User, Role } from '@/types/crm';
 import { calcDealCommission } from '@/lib/commission';
+import { getPresenceMap } from '@/lib/userActivityStorage';
 
 const VALID_ROLES: Role[] = ['ADMIN', 'LEADER', 'SALE', 'STAFF'];
 
@@ -11,6 +12,7 @@ export async function GET(request: NextRequest) {
   const userId = request.headers.get('x-user-id') || undefined;
   const user = await getCurrentUser(userId);
   const db = await readDb({ includeProducts: true });
+  const presenceMap = await getPresenceMap();
   const searchParams = request.nextUrl.searchParams;
   const dateFrom = searchParams.get('dateFrom');
   const dateTo = searchParams.get('dateTo');
@@ -72,6 +74,11 @@ export async function GET(request: NextRequest) {
     const totalCommission = wonDeals.reduce((sum, d) => sum + calcDealCommission(d, db.products || []), 0);
     const kpiProgress = u.targetRevenue > 0 ? Math.round((actualRevenue / u.targetRevenue) * 100) : 0;
 
+    const pData = presenceMap.get(u.id);
+    const effectiveLastActive = pData?.last_active_at || u.lastActiveAt || null;
+    const isOnline = effectiveLastActive ? Date.now() - new Date(effectiveLastActive).getTime() <= 90 * 1000 : false;
+    const currentDevice = pData?.device || u.currentDevice || null;
+
     return {
       ...toSafeUser(u),
       activeLeads,
@@ -80,9 +87,9 @@ export async function GET(request: NextRequest) {
       totalCommission,
       kpiProgress,
       hasPassword: !!u.password,
-      isOnline: u.lastActiveAt ? Date.now() - new Date(u.lastActiveAt).getTime() <= 3 * 60 * 1000 : false,
-      lastActiveAt: u.lastActiveAt || null,
-      currentDevice: u.currentDevice || null,
+      isOnline,
+      lastActiveAt: effectiveLastActive,
+      currentDevice,
     };
   });
 
