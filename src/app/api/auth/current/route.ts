@@ -1,5 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { readDb, toSafeUser } from '@/lib/db';
+import { saveHeartbeat } from '@/lib/userActivityStorage';
+
+function parseUserDevice(userAgent: string): string {
+  if (!userAgent) return 'Trình duyệt Web';
+  if (/iPhone/i.test(userAgent)) return 'iPhone (iOS)';
+  if (/iPad/i.test(userAgent)) return 'iPad (iOS)';
+  if (/Android/i.test(userAgent)) return 'Android';
+  if (/Windows/i.test(userAgent)) return 'Windows PC';
+  if (/Macintosh|Mac OS/i.test(userAgent)) return 'Mac OS';
+  if (/Linux/i.test(userAgent)) return 'Linux';
+  return 'Trình duyệt Web';
+}
 
 export async function GET(request: NextRequest) {
   // Set by middleware only when the signed session cookie is valid.
@@ -13,6 +25,13 @@ export async function GET(request: NextRequest) {
   if (!currentUser) {
     return NextResponse.json({ currentUser: null, isAuthenticated: false, users: [], teams: [] });
   }
+
+  // Ghi nhận ngay tức thì khi bất kỳ ai mở/tải lại app
+  try {
+    const userAgent = request.headers.get('user-agent') || '';
+    const device = parseUserDevice(userAgent);
+    saveHeartbeat({ userId: currentUser.id, device }).catch(() => {});
+  } catch {}
 
   // Directory of colleagues for display (names, roles, teams). Never includes passwords.
   const users = db.users.map(u => ({

@@ -141,7 +141,7 @@ export async function saveHeartbeat(params: {
     if (existingRes.rows.length === 0) {
       await client.execute({
         sql: `INSERT INTO user_daily_activities (user_id, date, device, total_seconds, sessions_count, first_active_at, last_active_at)
-              VALUES (?, ?, ?, 30, 1, ?, ?)`,
+              VALUES (?, ?, ?, 60, 1, ?, ?)`,
         args: [userId, vnDate, device, nowIso, nowIso],
       });
     } else {
@@ -154,12 +154,12 @@ export async function saveHeartbeat(params: {
       let newTotalSec = prevTotalSec;
       let newSessions = prevSessions;
 
-      if (elapsed > 0 && elapsed <= 120) {
-        // Heartbeat liên tục (<= 2 phút): cộng dồn thời gian chính xác
-        newTotalSec += Math.min(elapsed, 45);
-      } else if (elapsed > 120) {
-        // Cách xa hơn 2 phút: bắt đầu phiên mở app mới
-        newTotalSec += 30;
+      if (elapsed > 0 && elapsed <= 300) {
+        // Heartbeat trong vòng 5 phút: cộng dồn thời gian chính xác theo từng giây sử dụng
+        newTotalSec += Math.min(elapsed, 120);
+      } else if (elapsed > 300) {
+        // Cách xa hơn 5 phút (người dùng rời đi rồi quay lại): mở phiên sử dụng mới
+        newTotalSec += 60;
         newSessions += 1;
       }
 
