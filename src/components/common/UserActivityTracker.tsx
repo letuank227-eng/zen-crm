@@ -24,13 +24,16 @@ export default function UserActivityTracker() {
         return;
       }
 
-      if (isHeartbeatInFlight.current) return;
+      // Nếu request trước gửi chưa quá 6 giây thì mới đợi, quá 6 giây coi như timeout và cho gửi tiếp
+      if (isHeartbeatInFlight.current && Date.now() - lastHeartbeatSentRef.current < 6000) {
+        return;
+      }
       isHeartbeatInFlight.current = true;
       lastHeartbeatSentRef.current = Date.now();
 
-      // Dùng AbortController 15 giây để chống nghẽn mạng di động 4G/Wifi yếu
+      // Dùng AbortController 10 giây để chống nghẽn mạng di động 4G/Wifi yếu
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000);
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
 
       try {
         await fetchWithAuth('/api/user-activity/heartbeat', {
@@ -55,8 +58,8 @@ export default function UserActivityTracker() {
     // Cập nhật mốc thời gian khi người dùng có thao tác trên màn hình
     const handleUserInteraction = () => {
       lastActionRef.current = Date.now();
-      // Nếu đã hơn 12s kể từ lần ping gần nhất, gửi ngay lập tức để cập nhật trạng thái
-      if (Date.now() - lastHeartbeatSentRef.current > 12000) {
+      // Nếu đã hơn 8s kể từ lần ping gần nhất, gửi ngay lập tức để cập nhật trạng thái
+      if (Date.now() - lastHeartbeatSentRef.current > 8000) {
         sendHeartbeat();
       }
     };
@@ -73,6 +76,7 @@ export default function UserActivityTracker() {
     const handleWakeup = () => {
       if (document.visibilityState === 'visible') {
         lastActionRef.current = Date.now();
+        isHeartbeatInFlight.current = false;
         sendHeartbeat();
       }
     };
@@ -80,8 +84,8 @@ export default function UserActivityTracker() {
     window.addEventListener('pageshow', handleWakeup);
     window.addEventListener('focus', handleWakeup);
 
-    // 4. Chu kỳ định kỳ mỗi 15 giây khi đang mở app
-    const intervalId = setInterval(sendHeartbeat, 15000);
+    // 4. Chu kỳ định kỳ mỗi 12 giây khi đang mở app
+    const intervalId = setInterval(sendHeartbeat, 12000);
 
     return () => {
       clearInterval(intervalId);

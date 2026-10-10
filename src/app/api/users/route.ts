@@ -4,7 +4,7 @@ import { generateId } from '@/lib/utils';
 import { hashPassword, generateTempPassword, MIN_PASSWORD_LENGTH } from '@/lib/password';
 import { User, Role } from '@/types/crm';
 import { calcDealCommission } from '@/lib/commission';
-import { getPresenceMap } from '@/lib/userActivityStorage';
+import { getPresenceMap, getRelativePresence } from '@/lib/userActivityStorage';
 
 const VALID_ROLES: Role[] = ['ADMIN', 'LEADER', 'SALE', 'STAFF'];
 
@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
 
     const pData = presenceMap.get(u.id);
     const effectiveLastActive = pData?.last_active_at || u.lastActiveAt || null;
-    const isOnline = effectiveLastActive ? Date.now() - new Date(effectiveLastActive).getTime() <= 90 * 1000 : false;
+    const isOnline = getRelativePresence(effectiveLastActive).status === 'ONLINE';
     const currentDevice = pData?.device || u.currentDevice || null;
 
     return {

@@ -64,14 +64,20 @@ export default function TeamPage() {
   const [newUserTarget, setNewUserTarget] = useState(150000000);
   const [copiedUserId, setCopiedUserId] = useState<string | null>(null);
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (silent = false) => {
     try {
-      setIsLoading(true);
+      if (!silent) setIsLoading(true);
       const params = new URLSearchParams();
       if (dateFrom) params.set('dateFrom', dateFrom);
       if (dateTo) params.set('dateTo', dateTo);
-      const url = params.toString() ? `/api/users?${params.toString()}` : '/api/users';
-      const res = await fetchWithAuth(url);
+      params.set('_t', String(Date.now()));
+      const url = params.toString() ? `/api/users?${params.toString()}` : `/api/users?_t=${Date.now()}`;
+      const res = await fetchWithAuth(url, {
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+        },
+      });
       if (res.ok) {
         const data = await res.json();
         setUsers(data.users || []);
@@ -80,7 +86,7 @@ export default function TeamPage() {
     } catch (err) {
       console.error('Failed to load users:', err);
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   };
 
@@ -133,28 +139,28 @@ export default function TeamPage() {
   };
 
   useEffect(() => {
-    if (currentUser?.role === 'ADMIN') {
-      fetchActivityData(activityDate, false);
-      const today = getTodayVnDate();
-      let timer: any = null;
-      // Khi đang xem ngày hôm nay: tự động làm mới ngầm mỗi 10 giây khi ở tab ACTIVITY
-      if (activityDate === today) {
-        const pollInterval = activeTab === 'ACTIVITY' ? 10000 : 30000;
-        timer = setInterval(() => {
-          fetchActivityData(today, true);
-        }, pollInterval);
-      }
-      return () => {
-        if (timer) clearInterval(timer);
-      };
-    }
-  }, [currentUser?.role, activityDate, activeTab]);
+    if (!currentUser) return;
+    const today = getTodayVnDate();
 
-  useEffect(() => {
-    if (currentUser) {
-      fetchUsers();
+    // Làm mới ngay lập tức khi đổi tab
+    if (activeTab === 'ACTIVITY' && currentUser.role === 'ADMIN') {
+      fetchActivityData(activityDate, true);
+    } else {
+      fetchUsers(true);
     }
-  }, [currentUser, dateFrom, dateTo]);
+
+    // Polling ngầm mỗi 10 giây:
+    // Cập nhật cả trạng thái online ở tab KPIS và tab ACTIVITY theo thời gian thực
+    const timer = setInterval(() => {
+      if (activeTab === 'ACTIVITY' && currentUser.role === 'ADMIN') {
+        fetchActivityData(activityDate, true);
+      } else {
+        fetchUsers(true);
+      }
+    }, 10000);
+
+    return () => clearInterval(timer);
+  }, [currentUser, activeTab, activityDate, dateFrom, dateTo]);
 
   const handleToggleLock = async (user: any) => {
     if (currentUser?.role !== 'ADMIN') return;

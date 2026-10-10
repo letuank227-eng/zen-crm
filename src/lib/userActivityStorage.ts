@@ -389,7 +389,6 @@ export async function getUserActivityReportData(params: {
 export async function getPresenceMap(): Promise<Map<string, { device: string; last_active_at: string }>> {
   const map = new Map<string, { device: string; last_active_at: string }>();
   if (usingTurso()) {
-    await ensureTables();
     try {
       const client = getClient();
       const res = await client.execute('SELECT user_id, device, last_active_at FROM user_presence');
