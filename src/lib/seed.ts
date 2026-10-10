@@ -351,5 +351,6 @@ export function getInitialSeedData(): CrmDatabase {
       },
     ],
     pushSubscriptions: [],
+    userDailyActivities: [],
   };
 }

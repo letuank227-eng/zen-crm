@@ -24,12 +24,20 @@ import {
   Check,
   Send,
   Trash2,
+  Clock,
+  Activity,
+  Smartphone,
+  Laptop,
+  CalendarDays,
+  Radio,
+  Search,
 } from 'lucide-react';
 import { User, Team } from '@/types/crm';
-import { formatCurrency, generateRandomPassword, copyToClipboard } from '@/lib/utils';
+import { formatCurrency, formatDurationSeconds, generateRandomPassword, copyToClipboard } from '@/lib/utils';
 import { useDateFilter } from '@/context/DateFilterContext';
 
 import DatePeriodFilter from '@/components/common/DatePeriodFilter';
+import UserActivityMonitorView from '@/components/team/UserActivityMonitorView';
 
 export default function TeamPage() {
   const { fetchWithAuth, currentUser } = useAuth();
@@ -75,6 +83,64 @@ export default function TeamPage() {
       setIsLoading(false);
     }
   };
+
+  const [activeTab, setActiveTab] = useState<'KPIS' | 'ACTIVITY'>('KPIS');
+
+  // Activity Monitoring State (Dành riêng cho ADMIN)
+  const getTodayVnDate = () => {
+    const now = new Date();
+    const vnTime = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+    return vnTime.toISOString().slice(0, 10);
+  };
+
+  const [activityDate, setActivityDate] = useState<string>(getTodayVnDate);
+  const [activityData, setActivityData] = useState<{
+    date: string;
+    summary: {
+      onlineNowCount: number;
+      activeOnDateCount: number;
+      totalUsers: number;
+      totalCompanySeconds: number;
+      totalCompanyDurationFormatted: string;
+    };
+    users: any[];
+  } | null>(null);
+  const [isActivityLoading, setIsActivityLoading] = useState(false);
+  const [activitySearch, setActivitySearch] = useState('');
+  const [activityFilterStatus, setActivityFilterStatus] = useState<'ALL' | 'ONLINE' | 'ACTIVE_TODAY'>('ALL');
+
+  const fetchActivityData = async (dateToFetch?: string) => {
+    if (currentUser?.role !== 'ADMIN') return;
+    const target = dateToFetch || activityDate;
+    try {
+      setIsActivityLoading(true);
+      const res = await fetchWithAuth(`/api/user-activity?date=${target}`);
+      if (res.ok) {
+        const data = await res.json();
+        setActivityData(data);
+      }
+    } catch (err) {
+      console.error('Failed to load user activity data:', err);
+    } finally {
+      setIsActivityLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (currentUser?.role === 'ADMIN') {
+      fetchActivityData(activityDate);
+      const today = getTodayVnDate();
+      let timer: any = null;
+      if (activityDate === today) {
+        timer = setInterval(() => {
+          fetchActivityData(today);
+        }, 30000);
+      }
+      return () => {
+        if (timer) clearInterval(timer);
+      };
+    }
+  }, [currentUser?.role, activityDate]);
 
   useEffect(() => {
     if (currentUser) {
@@ -237,8 +303,47 @@ export default function TeamPage() {
         )}
       </div>
 
-      {/* Bộ lọc thời gian: Ngày, Tuần, Tháng, Quý, Năm */}
-      <DatePeriodFilter />
+      {/* Admin Tab Switcher */}
+      {currentUser?.role === 'ADMIN' && (
+        <div className="flex flex-wrap items-center gap-2 bg-slate-100 p-1.5 rounded-2xl w-fit border border-slate-200">
+          <button
+            type="button"
+            onClick={() => setActiveTab('KPIS')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+              activeTab === 'KPIS'
+                ? 'bg-white text-emerald-800 shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <Award className="w-4 h-4 text-emerald-600" />
+            <span>Đội Ngũ & Chỉ Tiêu KPI</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('ACTIVITY')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer relative ${
+              activeTab === 'ACTIVITY'
+                ? 'bg-white text-emerald-800 shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <Activity className="w-4 h-4 text-emerald-500" />
+            <span>Giám Sát Hoạt Động & Thời Gian Vào App</span>
+            {activityData?.summary?.onlineNowCount !== undefined && activityData.summary.onlineNowCount > 0 && (
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span>{activityData.summary.onlineNowCount} online</span>
+              </span>
+            )}
+          </button>
+        </div>
+      )}
+
+      {activeTab === 'KPIS' ? (
+        <>
+          {/* Bộ lọc thời gian: Ngày, Tuần, Tháng, Quý, Năm */}
+          <DatePeriodFilter />
 
       {/* PERSONAL PERFORMANCE DASHBOARD */}
       {personalData && (
@@ -434,15 +539,31 @@ export default function TeamPage() {
                   </td>
 
                   <td className="py-3 px-4 whitespace-nowrap">
-                    {u.isLocked ? (
-                      <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded border border-rose-200 whitespace-nowrap inline-block">
-                        Đang khóa
-                      </span>
-                    ) : (
-                      <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 whitespace-nowrap inline-block">
-                        Hoạt động
-                      </span>
-                    )}
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`inline-block w-2.5 h-2.5 rounded-full flex-shrink-0 ${
+                          u.isOnline
+                            ? 'bg-emerald-500 ring-2 ring-emerald-500/30 animate-pulse'
+                            : 'bg-slate-300'
+                        }`}
+                        title={u.isOnline ? 'Đang online' : 'Offline'}
+                      />
+                      {u.isLocked ? (
+                        <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded border border-rose-200 whitespace-nowrap inline-block">
+                          Đang khóa
+                        </span>
+                      ) : (
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded border whitespace-nowrap inline-block ${
+                            u.isOnline
+                              ? 'text-emerald-700 bg-emerald-50 border-emerald-300'
+                              : 'text-slate-600 bg-slate-50 border-slate-200'
+                          }`}
+                        >
+                          {u.isOnline ? 'Đang Online' : 'Hoạt động'}
+                        </span>
+                      )}
+                    </div>
                   </td>
 
                   <td className="py-3 px-4 text-right whitespace-nowrap">
@@ -493,6 +614,16 @@ export default function TeamPage() {
           </table>
         </div>
       </div>
+      </>
+      ) : (
+        <UserActivityMonitorView
+          activityData={activityData}
+          activityDate={activityDate}
+          setActivityDate={setActivityDate}
+          isLoading={isActivityLoading}
+          onRefresh={() => fetchActivityData(activityDate)}
+        />
+      )}
 
       {/* Modal: Edit KPI Target */}
       {editingUser && (

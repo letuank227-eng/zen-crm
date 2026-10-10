@@ -6,6 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import Sidebar from '@/components/layout/Sidebar';
 import Header from '@/components/layout/Header';
 import MobileBottomNav from '@/components/layout/MobileBottomNav';
+import UserActivityTracker from '@/components/common/UserActivityTracker';
 import { Sparkles } from 'lucide-react';
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
@@ -61,6 +62,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Mobile Bottom Navigation Bar */}
       <MobileBottomNav />
+
+      {/* Background Presence & Activity Duration Tracker */}
+      <UserActivityTracker />
     </div>
   );
 }

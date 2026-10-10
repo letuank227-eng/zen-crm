@@ -77,6 +77,9 @@ export async function GET(request: NextRequest) {
       actualRevenue,
       kpiProgress,
       hasPassword: !!u.password,
+      isOnline: u.lastActiveAt ? Date.now() - new Date(u.lastActiveAt).getTime() <= 3 * 60 * 1000 : false,
+      lastActiveAt: u.lastActiveAt || null,
+      currentDevice: u.currentDevice || null,
     };
   });
 

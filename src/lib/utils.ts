@@ -15,6 +15,16 @@ export function formatCurrency(amount: number): string {
   }).format(amount || 0);
 }
 
+export function formatDurationSeconds(totalSeconds: number): string {
+  if (!totalSeconds || totalSeconds <= 0) return '0 phút';
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  if (hours > 0) {
+    return minutes > 0 ? `${hours} giờ ${minutes} phút` : `${hours} giờ`;
+  }
+  return `${Math.max(1, minutes)} phút`;
+}
+
 export function formatDate(dateString?: string): string {
   if (!dateString) return '-';
   try {

@@ -14,6 +14,9 @@ export interface User {
   hasPassword?: boolean; // exposed to client instead of password
   targetRevenue: number; // Mục tiêu doanh số tháng (VND)
   targetDeals: number;   // Mục tiêu số deal chốt
+  lastActiveAt?: string; // Thời điểm hoạt động gần nhất (ISO string)
+  lastLoginAt?: string;  // Thời điểm đăng nhập gần nhất (ISO string)
+  currentDevice?: string; // Tên thiết bị đang sử dụng
 }
 
 export interface Team {
@@ -289,6 +292,19 @@ export interface SalesScript {
   allowedRoles: Role[];
 }
 
+export interface UserDailyActivity {
+  id: string; // `${userId}_${date}`
+  userId: string;
+  userName: string;
+  userRole: Role;
+  date: string; // 'YYYY-MM-DD' theo múi giờ Việt Nam
+  totalSeconds: number; // Tổng số giây hoạt động trong ngày
+  sessionsCount: number; // Số lần mở/vào app trong ngày
+  firstActiveAt: string; // ISO string thời điểm đầu tiên trong ngày
+  lastActiveAt: string; // ISO string thời điểm hoạt động gần nhất trong ngày
+  device?: string; // Thiết bị (iPhone, Android, Windows PC, Mac...)
+}
+
 export interface CrmDatabase {
   users: User[];
   teams: Team[];
@@ -308,4 +324,5 @@ export interface CrmDatabase {
   salesScripts: SalesScript[];
   notifications?: UserNotification[];
   pushSubscriptions?: PushSubscriptionItem[];
+  userDailyActivities?: UserDailyActivity[];
 }
