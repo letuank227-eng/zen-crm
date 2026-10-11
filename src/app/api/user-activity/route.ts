@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getUsersAndTeams } from '@/lib/db';
+import { readDb } from '@/lib/db';
 import { getUserActivityReportData } from '@/lib/userActivityStorage';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+export const fetchCache = 'force-no-store';
 
 export async function GET(request: NextRequest) {
   try {
@@ -11,7 +13,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Chưa đăng nhập' }, { status: 401 });
     }
 
-    const { users, teams } = await getUsersAndTeams();
+    const db = await readDb({ includeProducts: false });
+    const users = db.users || [];
+    const teams = db.teams || [];
+
     const currentUser = users.find(u => u.id === userId);
     if (!currentUser) {
       return NextResponse.json({ error: 'Không tìm thấy tài khoản' }, { status: 401 });
@@ -43,7 +48,13 @@ export async function GET(request: NextRequest) {
       teams,
     });
 
-    return NextResponse.json(report);
+    return NextResponse.json(report, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      },
+    });
   } catch (err: any) {
     console.error('Lỗi lấy báo cáo hoạt động user:', err);
     return NextResponse.json({ error: err?.message || 'Lỗi hệ thống' }, { status: 500 });

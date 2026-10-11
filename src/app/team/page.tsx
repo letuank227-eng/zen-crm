@@ -120,10 +120,11 @@ export default function TeamPage() {
     const target = dateToFetch || activityDate;
     try {
       if (!silent) setIsActivityLoading(true);
-      // Thêm cache-buster timestamp để luôn nhận dữ liệu realtime mới nhất
+      // Thêm cache-buster timestamp và no-store để luôn nhận dữ liệu realtime mới nhất
       const res = await fetchWithAuth(`/api/user-activity?date=${target}&_t=${Date.now()}`, {
+        cache: 'no-store',
         headers: {
-          'Cache-Control': 'no-cache',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
           'Pragma': 'no-cache',
         },
       });
@@ -140,13 +141,15 @@ export default function TeamPage() {
 
   useEffect(() => {
     if (!currentUser) return;
-    const today = getTodayVnDate();
 
-    // Làm mới ngay lập tức khi đổi tab
+    // Luôn làm mới cả tab KPIS và ACTIVITY khi vào trang hoặc chuyển đổi
     if (activeTab === 'ACTIVITY' && currentUser.role === 'ADMIN') {
       fetchActivityData(activityDate, true);
     } else {
       fetchUsers(true);
+      if (currentUser.role === 'ADMIN') {
+        fetchActivityData(activityDate, true);
+      }
     }
 
     // Polling ngầm mỗi 10 giây:
@@ -156,6 +159,9 @@ export default function TeamPage() {
         fetchActivityData(activityDate, true);
       } else {
         fetchUsers(true);
+        if (currentUser.role === 'ADMIN') {
+          fetchActivityData(activityDate, true);
+        }
       }
     }, 10000);
 
