@@ -171,6 +171,7 @@ export default function TeamPage() {
         body: JSON.stringify({ id: user.id, isLocked: !user.isLocked }),
       });
       fetchUsers();
+      fetchActivityData(activityDate, true);
     } catch (err) {
       console.error('Failed to lock/unlock user:', err);
     }
@@ -196,6 +197,7 @@ export default function TeamPage() {
       });
       if (res.ok) {
         fetchUsers();
+        fetchActivityData(activityDate, true);
       } else {
         const err = await res.json();
         alert(err.error || 'Xóa nhân sự thất bại');
@@ -223,6 +225,9 @@ export default function TeamPage() {
       setEditingUser(null);
       setEditPassword('');
       fetchUsers();
+      if (currentUser?.role === 'ADMIN') {
+        fetchActivityData(activityDate, true);
+      }
     } catch (err) {
       console.error('Failed to save KPI:', err);
     }
@@ -253,6 +258,9 @@ export default function TeamPage() {
         setNewUserEmail('');
         setNewUserPassword(generateRandomPassword(10));
         fetchUsers();
+        if (currentUser?.role === 'ADMIN') {
+          fetchActivityData(activityDate, true);
+        }
       } else {
         const data = await res.json().catch(() => ({}));
         alert(data.error || 'Tạo nhân viên thất bại');
